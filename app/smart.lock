@@ -3,7 +3,8 @@
   "dependencies": {
     "basePackages": {
       "iron-router": {},
-      "bootstrap-3": {}
+      "bootstrap-3": {},
+      "Handsontable": {}
     },
     "packages": {
       "iron-router": {
@@ -15,6 +16,11 @@
         "git": "https://github.com/mangasocial/meteor-bootstrap-3.git",
         "tag": "v3.1.1-1",
         "commit": "63dd38968828bb8963636df93e9a1c45e2dfe67e"
+      },
+      "Handsontable": {
+        "git": "https://github.com/olragon/meteor-handsontable.git",
+        "tag": "v0.9.9",
+        "commit": "4b86606255d20bb69ae033800406bee6d8ed83a8"
       }
     }
   }

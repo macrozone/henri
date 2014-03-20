@@ -1,5 +1,31 @@
 <template name="home">
 
 <h1>Henri</h1>
+{{>objectClassEditor}}
+{{>objectEditor}}
+{{>test}}
+{{>mathCompile}}
 
+</template>
+
+<template name="objectClassEditor">
+<div class="table"></div>
+
+
+</template>
+
+<template name="objectEditor">
+<div class="table"></div>
+</template>
+
+<template name="test">
+<p>{{test}}</p>
+</template>
+<template name="mathCompile">
+
+
+<textarea style="width:300px; height: 100px">{{expression}}</textarea><br />
+
+
+<div id="pretty">`{{expression}}`</div>
 </template>
