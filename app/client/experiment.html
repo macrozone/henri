@@ -1,7 +1,9 @@
 <template name="experiment">
-	<h2>Experiment</h2>
+
+	
 	
 	{{>experimentName}}
+
 	<div class="col-xs-12 col-sm-4">
 	{{>objectClassEditor}}
 	</div>
@@ -16,18 +18,19 @@
 
 </template>
 <template name="experimentName">
-<input class="input-lg form-control" type="text" value="{{experiment.name}}" />
+<h2>{{experiment.name}}</h2>
+<input style="display: none;" class="input-lg form-control" type="text" value="{{experiment.name}}" />
 
 </template>
 <template name="objectClassEditor">
-	<h4>1.) Objektklasse definieren</h4>
+	<h4>1.) Define the Object Class</h4>
 	<div class="table"></div>
 
 
 </template>
 
 <template name="objectEditor">
-	<h4>2.) Objekte definieren</h4>
+	<h4>2.) Define Objects</h4>
 	<div class="table"></div>
 </template>
 
@@ -35,7 +38,7 @@
 	<p>{{test}}</p>
 </template>
 <template name="functions">
-	<h4>3.) Funktionen definieren</h4>
+	<h4>3.) Define Functions</h4>
 	<table class="functions">
 		{{#eachWithParentExperimentID variables}}
 		{{#if variable}}

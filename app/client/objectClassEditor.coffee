@@ -10,7 +10,7 @@ Template.objectClassEditor.rendered = ->
 			handsontable = $(@find ".table").handsontable
 				data: data
 				minSpareRows: 1
-				colHeaders: ["Variable", "Typ"]
+				colHeaders: ["Variable", "Type"]
 				columns: [
 					{
 						data: "variable"
@@ -18,7 +18,7 @@ Template.objectClassEditor.rendered = ->
 					{
 						data: "type"
 						type: 'dropdown'
-						source: ["Vektor", "Skalar"]
+						source: ["Vector", "Scalar"]
 					}
 				]
 				afterChange: () ->

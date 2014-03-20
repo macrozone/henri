@@ -5,7 +5,7 @@ Router.map ->
 			experiments: Experiments.find()
 
 createExperiment = ->
-	experimentID = Experiments.insert {}
+	experimentID = Experiments.insert {name: "Sample Experiment (click to edit name)"}
 	Router.go "experiment", _id: experimentID
 
 Template.home.events

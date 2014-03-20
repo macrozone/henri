@@ -9,8 +9,19 @@ Router.map ->
 
 
 Template.experimentName.events
+	"click h2": (event, template) ->
+		$(template.find("input")).show()
+		$(template.find("h2")).hide()
+	"blur input": (event, template) ->
+		$(template.find("input")).hide()
+		$(template.find("h2")).show()
 	"change input": (event,template)->
-		Experiments.update {_id:template.data.experiment._id}, $set: name: $(event.target).val()
+		$(template.find("input")).hide()
+		$(template.find("h2")).show()
+		name = $(event.target).val()
+		unless name? or name.length == 0
+			name = "Sample Experiment (click to edit name)"
+		Experiments.update {_id:template.data.experiment._id}, $set: name: name
 
 Template.functions.variables = ->
 	Experiments.findOne({_id: @experiment?._id})?.objectClass
@@ -18,7 +29,7 @@ Template.functions.variables = ->
 
 prepareExprForPretty = (expr, objectClass) ->
 	for variable in objectClass
-		if variable.variable? and variable.type == "Vektor"
+		if variable.variable? and variable.type == "Vector"
 			regex = new RegExp "\\b#{variable.variable}(_i)?\\b", "g"
 			expr = expr.replace regex, "vec #{variable.variable}$1"
 	return expr

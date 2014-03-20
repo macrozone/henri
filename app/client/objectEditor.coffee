@@ -17,7 +17,7 @@ Template.objectEditor.rendered = ->
 		$handsontable = $(@find ".table").handsontable
 			data: data
 			minSpareRows: 1
-			colHeaders: ["Variable", "Typ"]
+			colHeaders: ["Variable", "Type"]
 			minRows: data.length
 			columns: [
 				
@@ -36,11 +36,11 @@ Template.objectEditor.rendered = ->
 				if obj.variable? and obj.type?
 					settings.colHeaders.push obj.variable
 					switch obj.type
-						when 'Skalar' 
+						when 'Scalar' 
 							columnOption = 
 								data: obj.variable
 								type: "numeric"
-						when 'Vektor'
+						when 'Vector'
 							columnOption = 
 								data: obj.variable
 								validator: vectorValidator
