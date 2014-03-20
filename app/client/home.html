@@ -1,25 +1,39 @@
 <template name="home">
 
-<h1>Henri</h1>
+<h1><img src="henri.jpg" height="80px"/>Henri</h1>
 {{>objectClassEditor}}
 {{>objectEditor}}
+{{>functions}}
 {{>test}}
 {{>mathCompile}}
 
 </template>
 
 <template name="objectClassEditor">
+<h4>1.) Objektklasse definieren</h4>
 <div class="table"></div>
 
 
 </template>
 
 <template name="objectEditor">
+<h4>2.) Objekte definieren</h4>
 <div class="table"></div>
 </template>
 
 <template name="test">
 <p>{{test}}</p>
+</template>
+<template name="functions">
+<h4>3.) Funktionen definieren</h4>
+{{#each variables}}
+	{{#if variable}}
+	{{>oneFunction}}
+	{{/if}}
+{{/each}}
+</template>
+<template name="oneFunction">
+<p>{{variable}} = <input type="text" /> <div class="pretty">``</div>
 </template>
 <template name="mathCompile">
 
@@ -28,4 +42,5 @@
 
 
 <div id="pretty">`{{expression}}`</div>
+<a href="http://www1.chapman.edu/~jipsen/mathml/asciimathsyntax.html">Syntax</a>
 </template>
