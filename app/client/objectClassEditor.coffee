@@ -20,7 +20,6 @@ Template.objectClassEditor.rendered = ->
 						type: 'dropdown'
 						source: ["Vektor", "Skalar"]
 					}
-
 				]
 				afterChange: () ->
 					Experiments.update {_id: experimentID}, {$set: "objectClass": @getData()}

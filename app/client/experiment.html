@@ -1,14 +1,22 @@
 <template name="experiment">
+	<h2>Experiment</h2>
+	
 	{{>experimentName}}
+	<div class="col-xs-12 col-sm-4">
 	{{>objectClassEditor}}
+	</div>
+	<div class="col-xs-12 col-sm-6">
 	{{>objectEditor}}
+	</div>
+	<div class="col-xs-12 col-sm-12">
 	{{>functions}}
-	{{>test}}
+	</div>
+	
 
 
 </template>
 <template name="experimentName">
-<input type="text" value="{{experiment.name}}" />
+<input class=".input-lg form-control" type="text" value="{{experiment.name}}" />
 
 </template>
 <template name="objectClassEditor">
@@ -31,12 +39,15 @@
 	<table class="functions">
 		{{#eachWithParentExperimentID variables}}
 		{{#if variable}}
+		{{#if type}}
+		
 		{{>oneFunction}}
+		{{/if}}
 		{{/if}}
 
 		{{/eachWithParentExperimentID}}
 	</table>
 </template>
 <template name="oneFunction">
-	<tr><td>{{variable}} = </td><td><input id="function_{{variable}}" class="form-control" type="text" value="{{expression}}" /></td><td><div class="pretty">`{{expressionForPretty}}`</div></td></tr>
+	<tr><td>{{variable}}</td><td>=</td><td><input id="function_{{variable}}" class="form-control" type="text" value="{{expression}}" /></td><td><div class="pretty">`{{expressionForPretty}}`</div></td></tr>
 </template>

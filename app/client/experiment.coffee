@@ -18,15 +18,12 @@ Template.functions.variables = ->
 
 prepareExprForPretty = (expr, objectClass) ->
 	for variable in objectClass
-
 		if variable.variable? and variable.type == "Vektor"
 			regex = new RegExp "\\b#{variable.variable}(_i)?\\b", "g"
 			expr = expr.replace regex, "vec #{variable.variable}$1"
 	return expr
 
-setPrettyInDom = (domEl, expr) ->
-	domEl.innerHTML = "`"+expr+"`"
-	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+
 
 onFunctionChange = (event, template)->
 
@@ -42,13 +39,13 @@ onFunctionChange = (event, template)->
 	_.defer =>
 		
 Template.functions.rendered = ->
-	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+	MathJax.Hub.Queue(["Typeset",MathJax.Hub])
+
 Template.oneFunction.rendered = ->
-	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+	MathJax.Hub.Queue(["Typeset",MathJax.Hub])
 
 
 Template.oneFunction.expression = ->
-
 	Functions.findOne({experimentID: @experimentID, variable: @variable})?.expression
 
 Template.oneFunction.expressionForPretty = ->

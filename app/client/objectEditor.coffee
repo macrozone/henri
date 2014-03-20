@@ -27,14 +27,13 @@ Template.objectEditor.rendered = ->
 
 		Deps.autorun ->
 			experiment = Experiments.findOne _id: experimentID
-			objectClass = experiment.objectClass
+			objectClass = experiment?.objectClass
 			handsontable = $handsontable.handsontable "getInstance"
 			settings = 
 				columns:[]
 				colHeaders:[]
 			for obj in objectClass
-				if obj.variable? and obj.type
-
+				if obj.variable? and obj.type?
 					settings.colHeaders.push obj.variable
 					switch obj.type
 						when 'Skalar' 
