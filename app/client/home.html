@@ -1,46 +1,15 @@
 <template name="home">
 
-<h1><img src="henri.jpg" height="80px"/>Henri</h1>
-{{>objectClassEditor}}
-{{>objectEditor}}
-{{>functions}}
-{{>test}}
-{{>mathCompile}}
-
+<button class="btn btn-default btn-create-experiment">Create new Experiment</button>
+{{>home_experiment_list}}
 </template>
 
-<template name="objectClassEditor">
-<h4>1.) Objektklasse definieren</h4>
-<div class="table"></div>
+<template name="home_experiment_list">
+	<h2>all Experiments</h2>
+	<ul class="home_experiment_list">
+		{{#each experiments}}
+		<li><a href="{{pathFor 'experiment'}}">{{#if name}}{{name}}{{else}}{{_id}}{{/if}}</a></li>
+		{{/each}}
+	</ul>
 
-
-</template>
-
-<template name="objectEditor">
-<h4>2.) Objekte definieren</h4>
-<div class="table"></div>
-</template>
-
-<template name="test">
-<p>{{test}}</p>
-</template>
-<template name="functions">
-<h4>3.) Funktionen definieren</h4>
-{{#each variables}}
-	{{#if variable}}
-	{{>oneFunction}}
-	{{/if}}
-{{/each}}
-</template>
-<template name="oneFunction">
-<p>{{variable}} = <input type="text" /> <div class="pretty">``</div>
-</template>
-<template name="mathCompile">
-
-
-<textarea style="width:300px; height: 100px">{{expression}}</textarea><br />
-
-
-<div id="pretty">`{{expression}}`</div>
-<a href="http://www1.chapman.edu/~jipsen/mathml/asciimathsyntax.html">Syntax</a>
 </template>

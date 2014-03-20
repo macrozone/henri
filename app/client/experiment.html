@@ -1,0 +1,42 @@
+<template name="experiment">
+	{{>experimentName}}
+	{{>objectClassEditor}}
+	{{>objectEditor}}
+	{{>functions}}
+	{{>test}}
+
+
+</template>
+<template name="experimentName">
+<input type="text" value="{{experiment.name}}" />
+
+</template>
+<template name="objectClassEditor">
+	<h4>1.) Objektklasse definieren</h4>
+	<div class="table"></div>
+
+
+</template>
+
+<template name="objectEditor">
+	<h4>2.) Objekte definieren</h4>
+	<div class="table"></div>
+</template>
+
+<template name="test">
+	<p>{{test}}</p>
+</template>
+<template name="functions">
+	<h4>3.) Funktionen definieren</h4>
+	<table class="functions">
+		{{#eachWithParentExperimentID variables}}
+		{{#if variable}}
+		{{>oneFunction}}
+		{{/if}}
+
+		{{/eachWithParentExperimentID}}
+	</table>
+</template>
+<template name="oneFunction">
+	<tr><td>{{variable}} = </td><td><input id="function_{{variable}}" class="form-control" type="text" value="{{expression}}" /></td><td><div class="pretty">`{{expressionForPretty}}`</div></td></tr>
+</template>
