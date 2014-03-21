@@ -35,6 +35,17 @@ prepareExprForPretty = (expr, objectClass) ->
 	return expr
 
 
+onCommentChange = (event, template)->
+
+	comment = $(event.target).val()
+	query = {experimentID: @experimentID, variable: @variable}
+	functionID = Functions.findOne(query)?._id
+	if functionID?
+		Functions.update {_id:functionID}, $set: comment: comment
+	else
+		doc = query
+		doc.comment = comment
+		Functions.insert doc
 
 onFunctionChange = (event, template)->
 
@@ -47,7 +58,7 @@ onFunctionChange = (event, template)->
 		doc = query
 		doc.expression = functionExpr
 		Functions.insert doc
-	_.defer =>
+
 		
 Template.functions.rendered = ->
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub])
@@ -59,8 +70,8 @@ Template.oneFunction.variable = ->
 	experiment = Experiments.findOne {_id: @experimentID}
 	objectClass = experiment.objectClass
 	prepareExprForPretty @variable, objectClass
-Template.oneFunction.expression = ->
-	Functions.findOne({experimentID: @experimentID, variable: @variable})?.expression
+Template.oneFunction.function = ->
+	Functions.findOne({experimentID: @experimentID, variable: @variable})
 
 Template.oneFunction.expressionForPretty = ->
 	expression = Functions.findOne({experimentID: @experimentID, variable: @variable})?.expression
@@ -71,6 +82,8 @@ Template.oneFunction.expressionForPretty = ->
 		exprForPretty = prepareExprForPretty expression, objectClass
 	
 Template.oneFunction.events
-	"change input": onFunctionChange
-	"keyup input" : onFunctionChange
+	"change input.function": onFunctionChange
+	"keyup input.function" : onFunctionChange
+	"change input.comment": onCommentChange
+	"keyup input.comment" : onCommentChange
 		

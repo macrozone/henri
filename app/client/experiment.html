@@ -52,5 +52,11 @@
 	</table>
 </template>
 <template name="oneFunction">
-	<tr><td>`{{variable}}`</td><td>=</td><td><input id="function_{{variable}}" class="form-control" type="text" value="{{expression}}" /></td><td><div class="pretty">`{{expressionForPretty}}`</div></td></tr>
+	<tr>
+		<td>`{{variable}}`</td>
+		<td>=</td>
+		<td><input id="function_{{variable}}" class="function form-control" placeholder="function" type="text" value="{{function.expression}}" /></td>
+		<td><div class="pretty">`{{expressionForPretty}}`</div></td>
+		<td><input id="comment_{{variable}}" class="comment form-control" placeholder="comment" type="text" value="{{function.comment}}" /></td>
+	</tr>
 </template>
