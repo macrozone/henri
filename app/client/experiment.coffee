@@ -29,7 +29,7 @@ Template.functions.variables = ->
 
 prepareExprForPretty = (expr, objectClass) ->
 	for variable in objectClass
-		if variable.variable? and variable.type == "Vector"
+		if variable.variable? and variable.variable.length > 0 and variable.type == "Vector"
 			regex = new RegExp "\\b#{variable.variable}(_i)?\\b", "g"
 			expr = expr.replace regex, "vec #{variable.variable}$1"
 	return expr
@@ -55,7 +55,10 @@ Template.functions.rendered = ->
 Template.oneFunction.rendered = ->
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub])
 
-
+Template.oneFunction.variable = ->
+	experiment = Experiments.findOne {_id: @experimentID}
+	objectClass = experiment.objectClass
+	prepareExprForPretty @variable, objectClass
 Template.oneFunction.expression = ->
 	Functions.findOne({experimentID: @experimentID, variable: @variable})?.expression
 
