@@ -1,0 +1,14 @@
+<template name="functionRepo">
+
+{{>functionRepo_list}}
+</template>
+
+<template name="functionRepo_list">
+	<h2>all Functions</h2>
+	<table class="functions">
+		{{#each functions}}
+			{{>oneFunction}}
+		{{/each}}
+	</ul>
+
+</template>

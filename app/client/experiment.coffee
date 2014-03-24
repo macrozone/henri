@@ -19,7 +19,7 @@ Template.experimentName.events
 		$(template.find("input")).hide()
 		$(template.find("h2")).show()
 		name = $(event.target).val()
-		unless name? or name.length == 0
+		unless name? or name.length > 0
 			name = "Sample Experiment (click to edit name)"
 		Experiments.update {_id:template.data.experiment._id}, $set: name: name
 
