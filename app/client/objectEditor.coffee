@@ -32,19 +32,20 @@ Template.objectEditor.rendered = ->
 			settings = 
 				columns:[]
 				colHeaders:[]
-			for obj in objectClass
-				if obj.variable? and obj.type?
-					settings.colHeaders.push obj.variable
-					switch obj.type
-						when 'Scalar' 
-							columnOption = 
-								data: obj.variable
-								type: "numeric"
-						when 'Vector'
-							columnOption = 
-								data: obj.variable
-								validator: vectorValidator
-					settings.columns.push columnOption
+			if objectClass?
+				for obj in objectClass
+					if obj.variable? and obj.type?
+						settings.colHeaders.push obj.variable
+						switch obj.type
+							when 'Scalar' 
+								columnOption = 
+									data: obj.variable
+									type: "numeric"
+							when 'Vector'
+								columnOption = 
+									data: obj.variable
+									validator: vectorValidator
+						settings.columns.push columnOption
 			handsontable.updateSettings settings
 
 

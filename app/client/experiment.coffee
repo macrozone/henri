@@ -1,11 +1,15 @@
 math = {}
 Router.map ->
-  @route 'experiment',
-    path: "/experiment/:_id"
-    data: ->
-      experiment: Experiments.findOne {_id: @params._id}
-    before: ->
-    	math = mathjs()
+	@route 'experiment',
+		path: "/experiment/:_id",
+		waitOn: ->
+			Meteor.subscribe 'experiments'
+		data: ->
+		 	Session.set "experimentID", @params._id
+		 	experiment: Experiments.findOne {_id: @params._id}
+		onBeforeAction: ->
+			@render "loading"
+			math = mathjs()
 
 
 Template.experimentName.events
@@ -32,14 +36,15 @@ prepareExprForPretty = (expr, objectClass) ->
 		if variable.variable? and variable.variable.length > 0 and variable.type == "Vector"
 			regex = new RegExp "\\b#{variable.variable}(_i)?\\b", "g"
 			expr = expr.replace regex, "vec #{variable.variable}$1"
-	return expr
+	return '`'+expr+'`'
 
 
 onCommentChange = (event, template)->
 
 	comment = $(event.target).val()
-	query = {experimentID: @experimentID, variable: @variable}
+	query = {experimentID: Session.get("experimentID"), variable: @variable}
 	functionID = Functions.findOne(query)?._id
+	console.log query
 	if functionID?
 		Functions.update {_id:functionID}, $set: comment: comment
 	else
@@ -50,7 +55,7 @@ onCommentChange = (event, template)->
 onFunctionChange = (event, template)->
 
 	functionExpr = $(event.target).val()
-	query = {experimentID: @experimentID, variable: @variable}
+	query = {experimentID: Session.get("experimentID"), variable: @variable}
 	functionID = Functions.findOne(query)?._id
 	if functionID?
 		Functions.update {_id:functionID}, $set: expression: functionExpr
@@ -58,6 +63,8 @@ onFunctionChange = (event, template)->
 		doc = query
 		doc.expression = functionExpr
 		Functions.insert doc
+	
+	
 
 		
 Template.functions.rendered = ->
@@ -67,19 +74,25 @@ Template.oneFunction.rendered = ->
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub])
 
 Template.oneFunction.variable = ->
-	experiment = Experiments.findOne {_id: @experimentID}
+	experiment = Experiments.findOne {_id: Session.get("experimentID")}
 	objectClass = experiment.objectClass
+
 	prepareExprForPretty @variable, objectClass
+
 Template.oneFunction.function = ->
-	Functions.findOne({experimentID: @experimentID, variable: @variable})
+
+	Functions.findOne({experimentID: Session.get("experimentID"), variable: @variable})
 
 Template.oneFunction.expressionForPretty = ->
-	expression = Functions.findOne({experimentID: @experimentID, variable: @variable})?.expression
+	Meteor.defer ->
+		MathJax.Hub.Queue(["Typeset",MathJax.Hub])
+	expression = Functions.findOne({experimentID: Session.get("experimentID"), variable: @variable})?.expression
 	if expression?
-		experiment = Experiments.findOne {_id: @experimentID}
+		experiment = Experiments.findOne {_id: Session.get("experimentID")}
 		objectClass = experiment.objectClass
 		variableExpr = prepareExprForPretty "#{@variable} = ", objectClass
 		exprForPretty = prepareExprForPretty expression, objectClass
+
 	
 Template.oneFunction.events
 	"change input.function": onFunctionChange

@@ -2,6 +2,7 @@
 
 Template.objectClassEditor.rendered = ->
 		experiment = @data.experiment
+		console.log experiment
 		if experiment?
 			experimentID = experiment._id
 			data = experiment.objectClass
