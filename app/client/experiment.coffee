@@ -41,7 +41,7 @@ prepareExprForPretty = (expr, objectClass) ->
 
 
 onCommentChange = (event, template)->
-
+	console.log @, template
 	comment = $(event.target).val()
 	query = {experimentID: Session.get("experimentID"), variable: @variable}
 	functionID = Functions.findOne(query)?._id

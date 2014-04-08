@@ -7,10 +7,11 @@ vectorValidator = (value, callback) ->
 	callback false unless parts.length == DIMENSION
 	callback _.every parts, _.isNumber
 Template.objectEditor.rendered = ->
+	$table = $(@find ".table")
 	Deps.autorun =>
 		experiment = Experiments.findOne _id: Session.get("experimentID")
 		
-		if experiment?
+		if experiment? and $table.length > 0
 			experimentID = experiment._id
 			data = experiment.objects
 			objectClass = experiment.objectClass
@@ -32,15 +33,26 @@ Template.objectEditor.rendered = ->
 									data: obj.variable
 									validator: vectorValidator
 						columns.push columnOption
+
 			
-			$handsontable = $(@find ".table").handsontable
-				data: data
-				minSpareRows: 1
-				colHeaders: ["Variable", "Type"]
-				minRows: data.length
-				columns: columns
-				colHeaders: colHeaders
-				afterChange: () ->
-					Experiments.update {_id: experimentID}, {$set: objects: @getData()}
+
+			handsontable = $table.handsontable "getInstance"
+			if handsontable?
+				handsontable.updateSettings 
+					columns: columns
+					colHeaders: colHeaders
+				handsontable.loadData data
+			else
+				$table.handsontable 
+					data: data
+					minSpareRows: 1
+					colHeaders: ["Variable", "Type"]
+					minRows: data.length
+					columns: columns
+					colHeaders: colHeaders
+					afterChange: () ->
+						if Session.get("experimentID") == experimentID
+							Experiments.update {_id: experimentID}, {$set: objects: @getData()}
+				
 
 

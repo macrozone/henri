@@ -6,7 +6,7 @@
 			@math = mathjs().parser()
 			window.foo = @math
 			experiment = Experiments.findOne _id: @experimentID
-			if experiment?
+			if experiment? and experiment.objectClass?
 				@constants = experiment.constants
 				@objects = _.filter experiment.objects, isValidObject
 				@types = {}
@@ -86,7 +86,7 @@ now we change the assign var (left of = )
 					
 					for expression in @_compiledExpression
 						expression.eval @math.scope
-			console.log @math.scope
+			console.log @math.scope.x[0]
 			
 				
 		play: ->
