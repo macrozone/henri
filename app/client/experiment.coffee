@@ -1,15 +1,16 @@
-math = {}
+
 Router.map ->
 	@route 'experiment',
 		path: "/experiment/:_id",
 		waitOn: ->
 			Meteor.subscribe 'experiments'
 		data: ->
-		 	Session.set "experimentID", @params._id
-		 	experiment: Experiments.findOne {_id: @params._id}
+			if @ready()
+				Session.set "experimentID", @params._id
+				{experiment: Experiments.findOne({_id: @params._id}), engine: new Engine @params._id}
+				
 		onBeforeAction: ->
 			@render "loading"
-			math = mathjs()
 
 
 Template.experimentName.events
@@ -64,6 +65,19 @@ onFunctionChange = (event, template)->
 		doc.expression = functionExpr
 		Functions.insert doc
 	
+onFunctionSortChange = (event, template)->
+
+	execOrder = parseInt $(event.target).val(),10
+	
+	query = {experimentID: Session.get("experimentID"), variable: @variable}
+	functionID = Functions.findOne(query)?._id
+
+	if functionID?
+		Functions.update {_id:functionID}, $set: execOrder: execOrder
+	else
+		doc = query
+		doc.execOrder = functionExpr
+		Functions.insert doc
 	
 
 		
@@ -95,8 +109,15 @@ Template.oneFunction.expressionForPretty = ->
 
 	
 Template.oneFunction.events
+	"keyup input.sort": onFunctionSortChange
+	"change input.sort": onFunctionSortChange
 	"change input.function": onFunctionChange
 	"keyup input.function" : onFunctionChange
 	"change input.comment": onCommentChange
 	"keyup input.comment" : onCommentChange
+
+Template.controls.events
+	"click .btn-step": (event, template) ->
+		
+		template.data.engine.step()
 		

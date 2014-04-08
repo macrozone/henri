@@ -3,7 +3,9 @@
 	
 	
 	{{>experimentName}}
-
+<div class="col-xs-12 col-sm-4">
+	{{>constantsEditor}}
+	</div>
 	<div class="col-xs-12 col-sm-4">
 	{{>objectClassEditor}}
 	</div>
@@ -14,7 +16,10 @@
 	{{>functions}}
 	</div>
 	
-
+<div class="col-xs-12 col-sm-12">
+	{{>controls}}
+	</div>
+	
 
 </template>
 <template name="experimentName">
@@ -22,15 +27,19 @@
 <input style="display: none;" class="input-lg form-control" type="text" value="{{experiment.name}}" />
 
 </template>
+<template name="constantsEditor">
+	<h4>1.) Define Constants</h4>
+	<div class="table"></div>
+</template>
 <template name="objectClassEditor">
-	<h4>1.) Define the Object Class</h4>
+	<h4>2.) Define the Object Class</h4>
 	<div class="table"></div>
 
 
 </template>
 
 <template name="objectEditor">
-	<h4>2.) Define Objects</h4>
+	<h4>3.) Define Objects</h4>
 	<div class="table"></div>
 </template>
 
@@ -38,7 +47,7 @@
 	<p>{{test}}</p>
 </template>
 <template name="functions">
-	<h4>3.) Define Functions</h4>
+	<h4>4.) Define Functions</h4>
 	<table class="functions">
 		{{#each variables}}
 		{{#if variable}}
@@ -53,11 +62,18 @@
 </template>
 <template name="oneFunction">
 	<tr>
+
 		<td>{{variable}}</td>
 		<td>=</td>
 		<td><input id="function_{{variable}}" class="function form-control" placeholder="function" type="text" value="{{function.expression}}" /></td>
 		<td><div class="pretty">{{expressionForPretty}}</div>
 		</td>
+		<td><input type="number" size="3" class="sort form-control" value="{{function.execOrder}}" placeholder="sort"/></td>
 		<td><input id="comment_{{variable}}" class="comment form-control" placeholder="comment" type="text" value="{{function.comment}}" /></td>
 	</tr>
+</template>
+
+
+<template name="controls">
+<button class="btn btn-step">step</button>
 </template>

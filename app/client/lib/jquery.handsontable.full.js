@@ -1,17 +1,18 @@
 /**
- * Handsontable 0.10.3
+ * Handsontable 0.10.5
  * Handsontable is a simple jQuery plugin for editable tables with basic copy-paste compatibility with Excel and Google Docs
  *
  * Copyright 2012, Marcin Warpechowski
  * Licensed under the MIT license.
  * http://handsontable.com/
  *
- * Date: Mon Feb 10 2014 14:15:11 GMT+0100 (CET)
+ * Date: Mon Mar 31 2014 14:19:47 GMT+0200 (CEST)
  */
 /*jslint white: true, browser: true, plusplus: true, indent: 4, maxerr: 50 */
 
 var Handsontable = { //class namespace
   extension: {}, //extenstion namespace
+  plugins: {}, //plugin namespace
   helper: {} //helper namespace
 };
 
@@ -1367,7 +1368,11 @@ Handsontable.Core = function (rootElement, userSettings) {
         if (parent) {
           clone.removeAttribute('id');
           parent.appendChild(clone);
-          var computedHeight = parseInt(window.getComputedStyle(clone, null).getPropertyValue('height'), 10);
+          var computedClientHeight = parseInt(clone.clientHeight, 10);
+          var computedPaddingTop = parseInt(window.getComputedStyle(clone, null).getPropertyValue('paddingTop'), 10) || 0;
+          var computedPaddingBottom = parseInt(window.getComputedStyle(clone, null).getPropertyValue('paddingBottom'), 10) || 0;
+
+          var computedHeight = computedClientHeight - computedPaddingTop - computedPaddingBottom;
 
           if(isNaN(computedHeight) && clone.currentStyle){
             computedHeight = parseInt(clone.currentStyle.height, 10)
@@ -2271,7 +2276,7 @@ Handsontable.Core = function (rootElement, userSettings) {
   /**
    * Handsontable version
    */
-  this.version = '0.10.3'; //inserted by grunt from package.json
+  this.version = '0.10.5'; //inserted by grunt from package.json
 };
 
 var DefaultSettings = function () {};
@@ -2385,6 +2390,66 @@ $.fn.handsontable = function (action) {
   }
 };
 
+(function (window) {
+  'use strict';
+
+  function MultiMap() {
+    var map = {
+      arrayMap: [],
+      weakMap: new WeakMap()
+    };
+
+    return {
+      'get': function (key) {
+        if (canBeAnArrayMapKey(key)) {
+          return map.arrayMap[key];
+        } else if (canBeAWeakMapKey(key)) {
+          return map.weakMap.get(key);
+        }
+      },
+
+      'set': function (key, value) {
+        if (canBeAnArrayMapKey(key)) {
+          map.arrayMap[key] = value;
+        } else if (canBeAWeakMapKey(key)) {
+          map.weakMap.set(key, value);
+        } else {
+          throw new Error('Invalid key type');
+        }
+
+
+      },
+
+      'delete': function (key) {
+        if (canBeAnArrayMapKey(key)) {
+          delete map.arrayMap[key];
+        } else if (canBeAWeakMapKey(key)) {
+          map.weakMap['delete'](key);  //Delete must be called using square bracket notation, because IE8 does not handle using `delete` with dot notation
+        }
+      }
+    };
+
+
+
+    function canBeAnArrayMapKey(obj){
+      return obj !== null && !isNaNSymbol(obj) && (typeof obj == 'string' || typeof obj == 'number');
+    }
+
+    function canBeAWeakMapKey(obj){
+      return obj !== null && (typeof obj == 'object' || typeof obj == 'function');
+    }
+
+    function isNaNSymbol(obj){
+      return obj !== obj; // NaN === NaN is always false
+    }
+
+  }
+
+  if (!window.MultiMap){
+    window.MultiMap = MultiMap;
+  }
+
+})(window);
 /**
  * Handsontable TableView constructor
  * @param {Object} instance
@@ -2906,7 +2971,7 @@ Handsontable.TableView.prototype.maximumVisibleElementHeight = function (top) {
             var ctrlDown = (event.ctrlKey || event.metaKey) && !event.altKey; //catch CTRL but not right ALT (which in some systems triggers ALT+CTRL)
 
             if (!activeEditor.isWaiting()) {
-              if (!Handsontable.helper.isMetaKey(event.keyCode) && !ctrlDown) {
+              if (!Handsontable.helper.isMetaKey(event.keyCode) && !ctrlDown && !that.isEditorOpened()) {
                 that.openEditor('');
                 event.stopPropagation(); //required by HandsontableEditor
                 return;
@@ -3178,7 +3243,9 @@ Handsontable.TableView.prototype.maximumVisibleElementHeight = function (top) {
     };
 
     this.openEditor = function (initialValue) {
-      activeEditor.beginEditing(initialValue);
+      if (!activeEditor.cellProperties.readOnly){
+        activeEditor.beginEditing(initialValue);
+      }
     };
 
     this.closeEditor = function (restoreOriginalValue, ctrlDown, callback) {
@@ -3702,6 +3769,11 @@ Handsontable.helper.cellMethodLookupFactory = function (methodName, allowUndefin
 
     return type;
   }
+
+};
+
+Handsontable.helper.toString = function (obj) {
+  return '' + obj;
 };
 Handsontable.SelectionPoint = function () {
   this._row = null; //private use intended
@@ -3811,7 +3883,8 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
           if (schema[i] === null) {
             prop = parent + i;
             this.colToPropCache.push(prop);
-            this.propToColCache[prop] = lastCol;
+            this.propToColCache.set(prop, lastCol);
+
             lastCol++;
           }
           else {
@@ -3829,12 +3902,16 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
     }
     var i, ilen, schema = this.getSchema();
     this.colToPropCache = [];
-    this.propToColCache = {};
+    this.propToColCache = new MultiMap();
     var columns = this.instance.getSettings().columns;
     if (columns) {
       for (i = 0, ilen = columns.length; i < ilen; i++) {
-        this.colToPropCache[i] = columns[i].data;
-        this.propToColCache[columns[i].data] = i;
+
+        if (typeof columns[i].data != 'undefined'){
+          this.colToPropCache[i] = columns[i].data;
+          this.propToColCache.set(columns[i].data, i);
+        }
+
       }
     }
     else {
@@ -3854,10 +3931,9 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
 
   Handsontable.DataMap.prototype.propToCol = function (prop) {
     var col;
-    if (typeof this.propToColCache[prop] !== 'undefined') {
-      col = this.propToColCache[prop];
-    }
-    else {
+    if (typeof this.propToColCache.get(prop) !== 'undefined') {
+      col = this.propToColCache.get(prop);
+    } else {
       col = prop;
     }
     col = Handsontable.PluginHooks.execute(this.instance, 'modifyCol', col);
@@ -4396,7 +4472,12 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
         instance.view.wt.getSetting('onCellDblClick');
       };
 
-      instance.rootElement.on('mousedown', '.htAutocompleteArrow', instance.acArrowListener); //this way we don't bind event listener to each arrow. We rely on propagation instead
+      instance.rootElement.on('mousedown.htAutocompleteArrow', '.htAutocompleteArrow', instance.acArrowListener); //this way we don't bind event listener to each arrow. We rely on propagation instead
+
+      //We need to unbind the listener after the table has been destroyed
+      instance.addHookOnce('afterDestroy', function () {
+        this.rootElement.off('mousedown.htAutocompleteArrow');
+      });
 
     }
   };
@@ -4689,10 +4770,6 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
 
   BaseEditor.prototype.beginEditing = function(initialValue){
     if (this.state != Handsontable.EditorState.VIRGIN) {
-      return;
-    }
-
-    if (this.cellProperties.readOnly) {
       return;
     }
 
@@ -5036,10 +5113,14 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
   var CheckboxEditor = Handsontable.editors.BaseEditor.prototype.extend();
 
   CheckboxEditor.prototype.beginEditing = function () {
-    this.saveValue([
-      [!this.originalValue]
-    ]);
+    var checkbox = this.TD.querySelector('input[type="checkbox"]');
+
+    if (checkbox) {
+      $(checkbox).trigger('click');
+    }
+
   };
+
   CheckboxEditor.prototype.finishEditing = function () {};
 
   CheckboxEditor.prototype.init = function () {};
@@ -5115,8 +5196,8 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
     this.$datePicker.remove();
   };
 
-  DateEditor.prototype.beginEditing = function (row, col, prop, useOriginalValue, suffix) {
-    Handsontable.editors.TextEditor.prototype.beginEditing.apply(this, arguments);
+  DateEditor.prototype.open = function () {
+    Handsontable.editors.TextEditor.prototype.open.call(this);
     this.showDatepicker();
   };
 
@@ -5337,6 +5418,7 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
     Handsontable.editors.HandsontableEditor.prototype.init.apply(this, arguments);
 
     this.query = null;
+    this.choices = [];
   };
 
   AutocompleteEditor.prototype.createElements = function(){
@@ -5360,41 +5442,17 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
 
     });
 
+    this.$htContainer.on('mouseleave', function () {
+      if(that.cellProperties.strict === true){
+        that.highlightBestMatchingChoice();
+      }
+    });
+
     this.$htContainer.on('mouseenter', function () {
       that.$htContainer.handsontable('deselectCell');
     });
 
-    this.$htContainer.on('mouseleave', function () {
-      that.queryChoices(that.query);
-    });
-
     Handsontable.editors.HandsontableEditor.prototype.bindEvents.apply(this, arguments);
-
-  };
-
-  AutocompleteEditor.prototype.beginEditing = function () {
-    Handsontable.editors.HandsontableEditor.prototype.beginEditing.apply(this, arguments);
-
-    var that = this;
-    setTimeout(function () {
-      that.queryChoices(that.TEXTAREA.value);
-    });
-
-    var hot =  this.$htContainer.handsontable('getInstance');
-
-    hot.updateSettings({
-      'colWidths': [this.wtDom.outerWidth(this.TEXTAREA) - 2],
-      afterRenderer: function (TD, row, col, prop, value) {
-        var caseSensitive = this.getCellMeta(row, col).filteringCaseSensitive === true;
-        var indexOfMatch =  caseSensitive ? value.indexOf(that.query) : value.toLowerCase().indexOf(that.query.toLowerCase());
-
-        if(indexOfMatch != -1){
-          var match = value.substr(indexOfMatch, that.query.length);
-          TD.innerHTML = value.replace(match, '<strong>' + match + '</strong>');
-        }
-      }
-    });
-
 
   };
 
@@ -5402,7 +5460,25 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
 
   AutocompleteEditor.prototype.open = function () {
 
-    var parent = this;
+    Handsontable.editors.HandsontableEditor.prototype.open.apply(this, arguments);
+
+    this.$textarea[0].style.visibility = 'visible';
+    this.focus();
+
+    var choicesListHot =  this.$htContainer.handsontable('getInstance');
+    var that = this;
+    choicesListHot.updateSettings({
+      'colWidths': [this.wtDom.outerWidth(this.TEXTAREA) - 2],
+      afterRenderer: function (TD, row, col, prop, value) {
+        var caseSensitive = this.getCellMeta(row, col).filteringCaseSensitive === true;
+        var indexOfMatch =  caseSensitive ? value.indexOf(this.query) : value.toLowerCase().indexOf(that.query.toLowerCase());
+
+        if(indexOfMatch != -1){
+          var match = value.substr(indexOfMatch, that.query.length);
+          TD.innerHTML = value.replace(match, '<strong>' + match + '</strong>');
+        }
+      }
+    });
 
     onBeforeKeyDownInner = function (event) {
       var instance = this;
@@ -5423,12 +5499,11 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
 
     };
 
-    this.$htContainer.handsontable('getInstance').addHook('beforeKeyDown', onBeforeKeyDownInner);
+    choicesListHot.addHook('beforeKeyDown', onBeforeKeyDownInner);
 
-    Handsontable.editors.HandsontableEditor.prototype.open.apply(this, arguments);
+    this.queryChoices(this.TEXTAREA.value);
 
-    this.$textarea[0].style.visibility = 'visible';
-    parent.focus();
+
   };
 
   AutocompleteEditor.prototype.close = function () {
@@ -5479,21 +5554,49 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
 
   };
 
-  function findItemIndexToHighlight(items, value){
+  AutocompleteEditor.prototype.updateChoicesList = function (choices) {
+
+     this.choices = choices;
+
+    this.$htContainer.handsontable('loadData', Handsontable.helper.pivot([choices]));
+
+    if(this.cellProperties.strict === true){
+      this.highlightBestMatchingChoice();
+    }
+
+    this.focus();
+  };
+
+  AutocompleteEditor.prototype.highlightBestMatchingChoice = function () {
+    var bestMatchingChoice = this.findBestMatchingChoice();
+
+    if ( typeof bestMatchingChoice == 'undefined' && this.cellProperties.allowInvalid === false){
+      bestMatchingChoice = 0;
+    }
+
+    if(typeof bestMatchingChoice == 'undefined'){
+      this.$htContainer.handsontable('deselectCell');
+    } else {
+      this.$htContainer.handsontable('selectCell', bestMatchingChoice, 0);
+    }
+
+  };
+
+  AutocompleteEditor.prototype.findBestMatchingChoice = function(){
     var bestMatch = {};
-    var valueLength = value.length;
+    var valueLength = this.getValue().length;
     var currentItem;
     var indexOfValue;
     var charsLeft;
 
 
-    for(var i = 0, len = items.length; i < len; i++){
-      currentItem = items[i];
+    for(var i = 0, len = this.choices.length; i < len; i++){
+      currentItem = this.choices[i];
 
       if(valueLength > 0){
-        indexOfValue = currentItem.indexOf(value)
+        indexOfValue = currentItem.indexOf(this.getValue())
       } else {
-        indexOfValue = currentItem === value ? 0 : -1;
+        indexOfValue = currentItem === this.getValue() ? 0 : -1;
       }
 
       if(indexOfValue == -1) continue;
@@ -5514,32 +5617,8 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
 
 
     return bestMatch.index;
-  }
-
-  AutocompleteEditor.prototype.updateChoicesList = function (choices) {
-    this.$htContainer.handsontable('loadData', Handsontable.helper.pivot([choices]));
-
-    var value = this.getValue();
-    var rowToHighlight;
-
-    if(this.cellProperties.strict === true){
-
-      rowToHighlight = findItemIndexToHighlight(choices, value);
-
-      if ( typeof rowToHighlight == 'undefined' && this.cellProperties.allowInvalid === false){
-        rowToHighlight = 0;
-      }
-
-    }
-
-    if(typeof rowToHighlight == 'undefined'){
-      this.$htContainer.handsontable('deselectCell');
-    } else {
-      this.$htContainer.handsontable('selectCell', rowToHighlight, 0);
-    }
-
-    this.focus();
   };
+
 
   Handsontable.editors.AutocompleteEditor = AutocompleteEditor;
   Handsontable.editors.registerEditor('autocomplete', AutocompleteEditor);
@@ -5577,10 +5656,10 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
   var SelectEditor = Handsontable.editors.BaseEditor.prototype.extend();
 
   SelectEditor.prototype.init = function(){
-    this.select = $('<select />')
-      .addClass('htSelectEditor')
-      .hide();
-    this.instance.rootElement.append(this.select);
+    this.select = document.createElement('SELECT');
+    Handsontable.Dom.addClass(this.select, 'htSelectEditor');
+    this.select.style.display = 'none';
+    this.instance.rootElement[0].appendChild(this.select);
   };
 
   SelectEditor.prototype.prepare = function(){
@@ -5596,21 +5675,16 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
       options =  this.prepareOptions(selectOptions);
     }
 
-    var optionElements = [];
+    Handsontable.Dom.empty(this.select);
 
     for (var option in options){
       if (options.hasOwnProperty(option)){
-        var optionElement = $('<option />');
-        optionElement.val(option);
-        optionElement.html(options[option]);
-
-        optionElements.push(optionElement);
+        var optionElement = document.createElement('OPTION');
+        optionElement.value = option;
+        Handsontable.Dom.fastInnerHTML(optionElement, options[option]);
+        this.select.appendChild(optionElement);
       }
     }
-
-    this.select.empty();
-    this.select.append(optionElements);
-
   };
 
   SelectEditor.prototype.prepareOptions = function(optionsToPrepare){
@@ -5631,11 +5705,11 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
   };
 
   SelectEditor.prototype.getValue = function () {
-    return this.select.val();
+    return this.select.value;
   };
 
   SelectEditor.prototype.setValue = function (value) {
-    this.select.val(value);
+    this.select.value = value;
   };
 
   var onBeforeKeyDown = function (event) {
@@ -5670,19 +5744,22 @@ Handsontable.SelectionPoint.prototype.arr = function (arr) {
   };
 
   SelectEditor.prototype.open = function () {
-    this.select.css({
-      height: $(this.TD).height(),
-      'min-width' : $(this.TD).outerWidth()
-    });
+    var width = Handsontable.Dom.outerWidth(this.TD); //important - group layout reads together for better performance
+    var height = Handsontable.Dom.outerHeight(this.TD);
+    var rootOffset = Handsontable.Dom.offset(this.instance.rootElement[0]);
+    var tdOffset = Handsontable.Dom.offset(this.TD);
 
-    this.select.show();
-    this.select.offset($(this.TD).offset());
+    this.select.style.height = height + 'px';
+    this.select.style.minWidth = width + 'px';
+    this.select.style.top = tdOffset.top - rootOffset.top + 'px';
+    this.select.style.left = tdOffset.left - rootOffset.left - 2 + 'px'; //2 is cell border
+    this.select.style.display = '';
 
     this.instance.addHook('beforeKeyDown', onBeforeKeyDown);
   };
 
   SelectEditor.prototype.close = function () {
-    this.select.hide();
+    this.select.style.display = 'none';
     this.instance.removeHook('beforeKeyDown', onBeforeKeyDown);
   };
 
@@ -6229,15 +6306,16 @@ CopyPasteClass.prototype.init = function () {
     this.elDiv.id = 'CopyPasteDiv';
     style = this.elDiv.style;
     style.position = 'fixed';
-    style.top = 0;
-    style.left = 0;
+    style.top = '-10000px';
+    style.left = '-10000px';
     parent.appendChild(this.elDiv);
 
     this.elTextarea = document.createElement('TEXTAREA');
     this.elTextarea.className = 'copyPaste';
     style = this.elTextarea.style;
-    style.width = '1px';
-    style.height = '1px';
+    style.width = '10000px';
+    style.height = '10000px';
+    style.overflow = 'hidden';
     this.elDiv.appendChild(this.elTextarea);
 
     if (typeof style.opacity !== 'undefined') {
@@ -9004,10 +9082,14 @@ function Storage(prefix) {
       var action = this.doneActions.pop();
 
       this.ignoreNewActions = true;
-      action.undo(this.instance);
-      this.ignoreNewActions = false;
+      var that = this;
+      action.undo(this.instance, function () {
+        that.ignoreNewActions = false;
+        that.undoneActions.push(action);
+      });
 
-      this.undoneActions.push(action);
+
+
     }
   };
 
@@ -9019,10 +9101,14 @@ function Storage(prefix) {
       var action = this.undoneActions.pop();
 
       this.ignoreNewActions = true;
-      action.redo(this.instance);
-      this.ignoreNewActions = true;
+      var that = this;
+      action.redo(this.instance, function () {
+        that.ignoreNewActions = false;
+        that.doneActions.push(action);
+      });
 
-      this.doneActions.push(action);
+
+
     }
   };
 
@@ -9061,19 +9147,25 @@ function Storage(prefix) {
     this.changes = changes;
   };
   Handsontable.helper.inherit(Handsontable.UndoRedo.ChangeAction, Handsontable.UndoRedo.Action);
-  Handsontable.UndoRedo.ChangeAction.prototype.undo = function (instance) {
+  Handsontable.UndoRedo.ChangeAction.prototype.undo = function (instance, undoneCallback) {
     var data = $.extend(true, [], this.changes);
     for (var i = 0, len = data.length; i < len; i++) {
       data[i].splice(3, 1);
     }
+
+    instance.addHookOnce('afterChange', undoneCallback);
+
     instance.setDataAtRowProp(data, null, null, 'undo');
 
   };
-  Handsontable.UndoRedo.ChangeAction.prototype.redo = function (instance) {
+  Handsontable.UndoRedo.ChangeAction.prototype.redo = function (instance, onFinishCallback) {
     var data = $.extend(true, [], this.changes);
     for (var i = 0, len = data.length; i < len; i++) {
       data[i].splice(2, 1);
     }
+
+    instance.addHookOnce('afterChange', onFinishCallback);
+
     instance.setDataAtRowProp(data, null, null, 'redo');
 
   };
@@ -9083,10 +9175,12 @@ function Storage(prefix) {
     this.amount = amount;
   };
   Handsontable.helper.inherit(Handsontable.UndoRedo.CreateRowAction, Handsontable.UndoRedo.Action);
-  Handsontable.UndoRedo.CreateRowAction.prototype.undo = function (instance) {
+  Handsontable.UndoRedo.CreateRowAction.prototype.undo = function (instance, undoneCallback) {
+    instance.addHookOnce('afterRemoveRow', undoneCallback);
     instance.alter('remove_row', this.index, this.amount);
   };
-  Handsontable.UndoRedo.CreateRowAction.prototype.redo = function (instance) {
+  Handsontable.UndoRedo.CreateRowAction.prototype.redo = function (instance, redoneCallback) {
+    instance.addHookOnce('afterCreateRow', redoneCallback);
     instance.alter('insert_row', this.index + 1, this.amount);
   };
 
@@ -9095,15 +9189,17 @@ function Storage(prefix) {
     this.data = data;
   };
   Handsontable.helper.inherit(Handsontable.UndoRedo.RemoveRowAction, Handsontable.UndoRedo.Action);
-  Handsontable.UndoRedo.RemoveRowAction.prototype.undo = function (instance) {
+  Handsontable.UndoRedo.RemoveRowAction.prototype.undo = function (instance, undoneCallback) {
     var spliceArgs = [this.index, 0];
     Array.prototype.push.apply(spliceArgs, this.data);
 
     Array.prototype.splice.apply(instance.getData(), spliceArgs);
 
+    instance.addHookOnce('afterRender', undoneCallback);
     instance.render();
   };
-  Handsontable.UndoRedo.RemoveRowAction.prototype.redo = function (instance) {
+  Handsontable.UndoRedo.RemoveRowAction.prototype.redo = function (instance, redoneCallback) {
+    instance.addHookOnce('afterRemoveRow', redoneCallback);
     instance.alter('remove_row', this.index, this.data.length);
   };
 
@@ -9112,10 +9208,12 @@ function Storage(prefix) {
     this.amount = amount;
   };
   Handsontable.helper.inherit(Handsontable.UndoRedo.CreateColumnAction, Handsontable.UndoRedo.Action);
-  Handsontable.UndoRedo.CreateColumnAction.prototype.undo = function (instance) {
+  Handsontable.UndoRedo.CreateColumnAction.prototype.undo = function (instance, undoneCallback) {
+    instance.addHookOnce('afterRemoveCol', undoneCallback);
     instance.alter('remove_col', this.index, this.amount);
   };
-  Handsontable.UndoRedo.CreateColumnAction.prototype.redo = function (instance) {
+  Handsontable.UndoRedo.CreateColumnAction.prototype.redo = function (instance, redoneCallback) {
+    instance.addHookOnce('afterCreateCol', redoneCallback);
     instance.alter('insert_col', this.index + 1, this.amount);
   };
 
@@ -9126,7 +9224,7 @@ function Storage(prefix) {
     this.headers = headers;
   };
   Handsontable.helper.inherit(Handsontable.UndoRedo.RemoveColumnAction, Handsontable.UndoRedo.Action);
-  Handsontable.UndoRedo.RemoveColumnAction.prototype.undo = function (instance) {
+  Handsontable.UndoRedo.RemoveColumnAction.prototype.undo = function (instance, undoneCallback) {
     var row, spliceArgs;
     for (var i = 0, len = instance.getData().length; i < len; i++) {
       row = instance.getDataAtRow(i);
@@ -9144,9 +9242,11 @@ function Storage(prefix) {
       Array.prototype.splice.apply(instance.getSettings().colHeaders, spliceArgs);
     }
 
+    instance.addHookOnce('afterRender', undoneCallback);
     instance.render();
   };
-  Handsontable.UndoRedo.RemoveColumnAction.prototype.redo = function (instance) {
+  Handsontable.UndoRedo.RemoveColumnAction.prototype.redo = function (instance, redoneCallback) {
+    instance.addHookOnce('afterRemoveCol', redoneCallback);
     instance.alter('remove_col', this.index, this.amount);
   };
 })(Handsontable);
@@ -9370,6 +9470,8 @@ if (typeof Handsontable !== 'undefined') {
   Handsontable.PluginHooks.add('afterOnCellCornerMouseDown', function () {
     setupListening(this);
   });
+
+  Handsontable.plugins.DragToScroll = DragToScroll;
 }
 
 (function (Handsontable, CopyPaste, SheetClip) {
@@ -9493,6 +9595,143 @@ if (typeof Handsontable !== 'undefined') {
   Handsontable.PluginHooks.add('afterUpdateSettings', init);
 
 })(Handsontable, CopyPaste, SheetClip);
+(function (Handsontable) {
+
+  'use strict';
+
+  Handsontable.Search = function Search(instance) {
+    this.query = function (queryStr, callback, queryMethod) {
+      var rowCount = instance.countRows();
+      var colCount = instance.countCols();
+      var queryResult = [];
+
+      if (!callback) {
+        callback = Handsontable.Search.global.getDefaultCallback();
+      }
+
+      if (!queryMethod) {
+        queryMethod = Handsontable.Search.global.getDefaultQueryMethod();
+      }
+
+      for (var rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+        for (var colIndex = 0; colIndex < colCount; colIndex++) {
+          var cellData = instance.getDataAtCell(rowIndex, colIndex);
+          var cellProperties = instance.getCellMeta(rowIndex, colIndex);
+          var cellCallback = cellProperties.search.callback || callback;
+          var cellQueryMethod = cellProperties.search.queryMethod || queryMethod;
+          var testResult = cellQueryMethod(queryStr, cellData);
+
+          if (testResult) {
+            var singleResult = {
+              row: rowIndex,
+              col: colIndex,
+              data: cellData
+            };
+
+            queryResult.push(singleResult);
+          }
+
+          if (cellCallback) {
+            cellCallback(instance, rowIndex, colIndex, cellData, testResult);
+          }
+        }
+      }
+
+      return queryResult;
+
+    };
+
+  };
+
+  Handsontable.Search.DEFAULT_CALLBACK = function (instance, row, col, data, testResult) {
+    instance.getCellMeta(row, col).isSearchResult = testResult;
+  };
+
+  Handsontable.Search.DEFAULT_QUERY_METHOD = function (query, value) {
+
+    if (typeof query == 'undefined' || query == null || !query.toLowerCase || query.length == 0){
+      return false;
+    }
+
+    return value.toString().toLowerCase().indexOf(query.toLowerCase()) != -1;
+  };
+
+  Handsontable.Search.DEFAULT_SEARCH_RESULT_CLASS = 'htSearchResult';
+
+  Handsontable.Search.global = (function () {
+
+    var defaultCallback = Handsontable.Search.DEFAULT_CALLBACK;
+    var defaultQueryMethod = Handsontable.Search.DEFAULT_QUERY_METHOD;
+    var defaultSearchResultClass = Handsontable.Search.DEFAULT_SEARCH_RESULT_CLASS;
+
+    return {
+      getDefaultCallback: function () {
+        return defaultCallback;
+      },
+
+      setDefaultCallback: function (newDefaultCallback) {
+        defaultCallback = newDefaultCallback;
+      },
+
+      getDefaultQueryMethod: function () {
+        return defaultQueryMethod;
+      },
+
+      setDefaultQueryMethod: function (newDefaultQueryMethod) {
+        defaultQueryMethod = newDefaultQueryMethod;
+      },
+
+      getDefaultSearchResultClass: function () {
+        return defaultSearchResultClass;
+      },
+
+      setDefaultSearchResultClass: function (newSearchResultClass) {
+        defaultSearchResultClass = newSearchResultClass;
+      }
+    }
+
+  })();
+
+
+
+  Handsontable.SearchCellDecorator = function (instance, TD, row, col, prop, value, cellProperties) {
+
+    var searchResultClass = (typeof cellProperties.search == 'object' && cellProperties.search.searchResultClass) || Handsontable.Search.global.getDefaultSearchResultClass();
+
+    if(cellProperties.isSearchResult){
+      Handsontable.Dom.addClass(TD, searchResultClass);
+    } else {
+      Handsontable.Dom.removeClass(TD, searchResultClass);
+    }
+  };
+
+
+
+  var originalDecorator = Handsontable.renderers.cellDecorator;
+
+  Handsontable.renderers.cellDecorator = function (instance, TD, row, col, prop, value, cellProperties) {
+    originalDecorator.apply(this, arguments);
+    Handsontable.SearchCellDecorator.apply(this, arguments);
+  };
+
+  function init() {
+    var instance = this;
+
+    var pluginEnabled = !!instance.getSettings().search;
+
+    if (pluginEnabled) {
+      instance.search = new Handsontable.Search(instance);
+    } else {
+      delete instance.search;
+    }
+
+  }
+
+  Handsontable.PluginHooks.add('afterInit', init);
+  Handsontable.PluginHooks.add('afterUpdateSettings', init);
+
+
+})(Handsontable);
 /**
  * Creates an overlay over the original Walkontable instance. The overlay renders the clone of the original Walkontable
  * and (optionally) implements behavior needed for native horizontal and vertical scrolling
@@ -13129,49 +13368,49 @@ function WalkontableWheel(instance) {
 
 var Cursor =
 {
-	x: 0, y: 0,
-	init: function()
-	{
-		this.setEvent('mouse');
-		this.setEvent('touch');
-	},
-	setEvent: function(type)
-	{
-		var moveHandler = document['on' + type + 'move'] || function(){};
-		document['on' + type + 'move'] = function(e)
-		{
-			moveHandler(e);
-			Cursor.refresh(e);
-		}
-	},
-	refresh: function(e)
-	{
-		if(!e)
-		{
-			e = window.event;
-		}
-		if(e.type == 'mousemove')
-		{
-			this.set(e);
-		}
-		else if(e.touches)
-		{
-			this.set(e.touches[0]);
-		}
-	},
-	set: function(e)
-	{
-		if(e.pageX || e.pageY)
-		{
-			this.x = e.pageX;
-			this.y = e.pageY;
-		}
-		else if(document.body && (e.clientX || e.clientY)) //need to check whether body exists, because of IE8 issue (#1084)
-		{
-			this.x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-			this.y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
-		}
-	}
+  x: 0, y: 0,
+  init: function()
+  {
+    this.setEvent('mouse');
+    this.setEvent('touch');
+  },
+  setEvent: function(type)
+  {
+    var moveHandler = document['on' + type + 'move'] || function(){};
+    document['on' + type + 'move'] = function(e)
+    {
+      moveHandler(e);
+      Cursor.refresh(e);
+    }
+  },
+  refresh: function(e)
+  {
+    if(!e)
+    {
+      e = window.event;
+    }
+    if(e.type == 'mousemove')
+    {
+      this.set(e);
+    }
+    else if(e.touches)
+    {
+      this.set(e.touches[0]);
+    }
+  },
+  set: function(e)
+  {
+    if(e.pageX || e.pageY)
+    {
+      this.x = e.pageX;
+      this.y = e.pageY;
+    }
+    else if(document.body && (e.clientX || e.clientY)) //need to check whether body exists, because of IE8 issue (#1084)
+    {
+      this.x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+      this.y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+    }
+  }
 };
 Cursor.init();
 
@@ -13179,537 +13418,537 @@ Cursor.init();
 
 var Position =
 {
-	get: function(obj)
-	{
-		var curtop = 0, curleft = 0; //Walkontable patch. Original (var curleft = curtop = 0;) created curtop in global scope
-		if(obj.offsetParent)
-		{
-			do
-			{
-				curleft += obj.offsetLeft;
-				curtop += obj.offsetTop;
-			}
-			while((obj = obj.offsetParent));
-		}
-		return [curleft, curtop];
-	}
+  get: function(obj)
+  {
+    var curtop = 0, curleft = 0; //Walkontable patch. Original (var curleft = curtop = 0;) created curtop in global scope
+    if(obj.offsetParent)
+    {
+      do
+      {
+        curleft += obj.offsetLeft;
+        curtop += obj.offsetTop;
+      }
+      while((obj = obj.offsetParent));
+    }
+    return [curleft, curtop];
+  }
 };
 
 /* Dragdealer */
 
 var Dragdealer = function(wrapper, options)
 {
-	if(typeof(wrapper) == 'string')
-	{
-		wrapper = document.getElementById(wrapper);
-	}
-	if(!wrapper)
-	{
-		return;
-	}
-	var handle = wrapper.getElementsByTagName('div')[0];
-	if(!handle || handle.className.search(/(^|\s)handle(\s|$)/) == -1)
-	{
-		return;
-	}
-	this.init(wrapper, handle, options || {});
-	this.setup();
+  if(typeof(wrapper) == 'string')
+  {
+    wrapper = document.getElementById(wrapper);
+  }
+  if(!wrapper)
+  {
+    return;
+  }
+  var handle = wrapper.getElementsByTagName('div')[0];
+  if(!handle || handle.className.search(/(^|\s)handle(\s|$)/) == -1)
+  {
+    return;
+  }
+  this.init(wrapper, handle, options || {});
+  this.setup();
 };
 Dragdealer.prototype =
 {
-	init: function(wrapper, handle, options)
-	{
-		this.wrapper = wrapper;
-		this.handle = handle;
-		this.options = options;
-		
-		this.disabled = this.getOption('disabled', false);
-		this.horizontal = this.getOption('horizontal', true);
-		this.vertical = this.getOption('vertical', false);
-		this.slide = this.getOption('slide', true);
-		this.steps = this.getOption('steps', 0);
-		this.snap = this.getOption('snap', false);
-		this.loose = this.getOption('loose', false);
-		this.speed = this.getOption('speed', 10) / 100;
-		this.xPrecision = this.getOption('xPrecision', 0);
-		this.yPrecision = this.getOption('yPrecision', 0);
-		
-		this.callback = options.callback || null;
-		this.animationCallback = options.animationCallback || null;
-		
-		this.bounds = {
-			left: options.left || 0, right: -(options.right || 0),
-			top: options.top || 0, bottom: -(options.bottom || 0),
-			x0: 0, x1: 0, xRange: 0,
-			y0: 0, y1: 0, yRange: 0
-		};
-		this.value = {
-			prev: [-1, -1],
-			current: [options.x || 0, options.y || 0],
-			target: [options.x || 0, options.y || 0]
-		};
-		this.offset = {
-			wrapper: [0, 0],
-			mouse: [0, 0],
-			prev: [-999999, -999999],
-			current: [0, 0],
-			target: [0, 0]
-		};
-		this.change = [0, 0];
-		
-		this.activity = false;
-		this.dragging = false;
-		this.tapping = false;
-	},
-	getOption: function(name, defaultValue)
-	{
-		return this.options[name] !== undefined ? this.options[name] : defaultValue;
-	},
-	setup: function()
-	{
-		this.setWrapperOffset();
-		this.setBoundsPadding();
-		this.setBounds();
-		this.setSteps();
-		
-		this.addListeners();
-	},
-	setWrapperOffset: function()
-	{
-		this.offset.wrapper = Position.get(this.wrapper);
-	},
-	setBoundsPadding: function()
-	{
-		if(!this.bounds.left && !this.bounds.right)
-		{
-			this.bounds.left = Position.get(this.handle)[0] - this.offset.wrapper[0];
-			this.bounds.right = -this.bounds.left;
-		}
-		if(!this.bounds.top && !this.bounds.bottom)
-		{
-			this.bounds.top = Position.get(this.handle)[1] - this.offset.wrapper[1];
-			this.bounds.bottom = -this.bounds.top;
-		}
-	},
-	setBounds: function()
-	{
-		this.bounds.x0 = this.bounds.left;
-		this.bounds.x1 = this.wrapper.offsetWidth + this.bounds.right;
-		this.bounds.xRange = (this.bounds.x1 - this.bounds.x0) - this.handle.offsetWidth;
-		
-		this.bounds.y0 = this.bounds.top;
-		this.bounds.y1 = this.wrapper.offsetHeight + this.bounds.bottom;
-		this.bounds.yRange = (this.bounds.y1 - this.bounds.y0) - this.handle.offsetHeight;
-		
-		this.bounds.xStep = 1 / (this.xPrecision || Math.max(this.wrapper.offsetWidth, this.handle.offsetWidth));
-		this.bounds.yStep = 1 / (this.yPrecision || Math.max(this.wrapper.offsetHeight, this.handle.offsetHeight));
-	},
-	setSteps: function()
-	{
-		if(this.steps > 1)
-		{
-			this.stepRatios = [];
-			for(var i = 0; i <= this.steps - 1; i++)
-			{
-				this.stepRatios[i] = i / (this.steps - 1);
-			}
-		}
-	},
-	addListeners: function()
-	{
-		var self = this;
-		
-		this.wrapper.onselectstart = function()
-		{
-			return false;
-		}
-		this.handle.onmousedown = this.handle.ontouchstart = function(e)
-		{
-			self.handleDownHandler(e);
-		};
-		this.wrapper.onmousedown = this.wrapper.ontouchstart = function(e)
-		{
-			self.wrapperDownHandler(e);
-		};
-		var mouseUpHandler = document.onmouseup || function(){};
-		document.onmouseup = function(e)
-		{
-			mouseUpHandler(e);
-			self.documentUpHandler(e);
-		};
-		var touchEndHandler = document.ontouchend || function(){};
-		document.ontouchend = function(e)
-		{
-			touchEndHandler(e);
-			self.documentUpHandler(e);
-		};
-		var resizeHandler = window.onresize || function(){};
-		window.onresize = function(e)
-		{
-			resizeHandler(e);
-			self.documentResizeHandler(e);
-		};
-		this.wrapper.onmousemove = function(e)
-		{
-			self.activity = true;
-		}
-		this.wrapper.onclick = function(e)
-		{
-			return !self.activity;
-		}
-		
-		this.interval = setInterval(function(){ self.animate() }, 25);
-		self.animate(false, true);
-	},
-	handleDownHandler: function(e)
-	{
-		this.activity = false;
-		Cursor.refresh(e);
-		
-		this.preventDefaults(e, true);
-		this.startDrag();
-	},
-	wrapperDownHandler: function(e)
-	{
-		Cursor.refresh(e);
-		
-		this.preventDefaults(e, true);
-		this.startTap();
-	},
-	documentUpHandler: function(e)
-	{
-		this.stopDrag();
-		this.stopTap();
-	},
-	documentResizeHandler: function(e)
-	{
-		this.setWrapperOffset();
-		this.setBounds();
-		
-		this.update();
-	},
-	enable: function()
-	{
-		this.disabled = false;
-		this.handle.className = this.handle.className.replace(/\s?disabled/g, '');
-	},
-	disable: function()
-	{
-		this.disabled = true;
-		this.handle.className += ' disabled';
-	},
-	setStep: function(x, y, snap)
-	{
-		this.setValue(
-			this.steps && x > 1 ? (x - 1) / (this.steps - 1) : 0,
-			this.steps && y > 1 ? (y - 1) / (this.steps - 1) : 0,
-			snap
-		);
-	},
-	setValue: function(x, y, snap)
-	{
-		this.setTargetValue([x, y || 0]);
-		if(snap)
-		{
-			this.groupCopy(this.value.current, this.value.target);
-		}
-	},
-	startTap: function(target)
-	{
-		if(this.disabled)
-		{
-			return;
-		}
-		this.tapping = true;
+  init: function(wrapper, handle, options)
+  {
+    this.wrapper = wrapper;
+    this.handle = handle;
+    this.options = options;
+    
+    this.disabled = this.getOption('disabled', false);
+    this.horizontal = this.getOption('horizontal', true);
+    this.vertical = this.getOption('vertical', false);
+    this.slide = this.getOption('slide', true);
+    this.steps = this.getOption('steps', 0);
+    this.snap = this.getOption('snap', false);
+    this.loose = this.getOption('loose', false);
+    this.speed = this.getOption('speed', 10) / 100;
+    this.xPrecision = this.getOption('xPrecision', 0);
+    this.yPrecision = this.getOption('yPrecision', 0);
+    
+    this.callback = options.callback || null;
+    this.animationCallback = options.animationCallback || null;
+    
+    this.bounds = {
+      left: options.left || 0, right: -(options.right || 0),
+      top: options.top || 0, bottom: -(options.bottom || 0),
+      x0: 0, x1: 0, xRange: 0,
+      y0: 0, y1: 0, yRange: 0
+    };
+    this.value = {
+      prev: [-1, -1],
+      current: [options.x || 0, options.y || 0],
+      target: [options.x || 0, options.y || 0]
+    };
+    this.offset = {
+      wrapper: [0, 0],
+      mouse: [0, 0],
+      prev: [-999999, -999999],
+      current: [0, 0],
+      target: [0, 0]
+    };
+    this.change = [0, 0];
+    
+    this.activity = false;
+    this.dragging = false;
+    this.tapping = false;
+  },
+  getOption: function(name, defaultValue)
+  {
+    return this.options[name] !== undefined ? this.options[name] : defaultValue;
+  },
+  setup: function()
+  {
+    this.setWrapperOffset();
+    this.setBoundsPadding();
+    this.setBounds();
+    this.setSteps();
+    
+    this.addListeners();
+  },
+  setWrapperOffset: function()
+  {
+    this.offset.wrapper = Position.get(this.wrapper);
+  },
+  setBoundsPadding: function()
+  {
+    if(!this.bounds.left && !this.bounds.right)
+    {
+      this.bounds.left = Position.get(this.handle)[0] - this.offset.wrapper[0];
+      this.bounds.right = -this.bounds.left;
+    }
+    if(!this.bounds.top && !this.bounds.bottom)
+    {
+      this.bounds.top = Position.get(this.handle)[1] - this.offset.wrapper[1];
+      this.bounds.bottom = -this.bounds.top;
+    }
+  },
+  setBounds: function()
+  {
+    this.bounds.x0 = this.bounds.left;
+    this.bounds.x1 = this.wrapper.offsetWidth + this.bounds.right;
+    this.bounds.xRange = (this.bounds.x1 - this.bounds.x0) - this.handle.offsetWidth;
+    
+    this.bounds.y0 = this.bounds.top;
+    this.bounds.y1 = this.wrapper.offsetHeight + this.bounds.bottom;
+    this.bounds.yRange = (this.bounds.y1 - this.bounds.y0) - this.handle.offsetHeight;
+    
+    this.bounds.xStep = 1 / (this.xPrecision || Math.max(this.wrapper.offsetWidth, this.handle.offsetWidth));
+    this.bounds.yStep = 1 / (this.yPrecision || Math.max(this.wrapper.offsetHeight, this.handle.offsetHeight));
+  },
+  setSteps: function()
+  {
+    if(this.steps > 1)
+    {
+      this.stepRatios = [];
+      for(var i = 0; i <= this.steps - 1; i++)
+      {
+        this.stepRatios[i] = i / (this.steps - 1);
+      }
+    }
+  },
+  addListeners: function()
+  {
+    var self = this;
+    
+    this.wrapper.onselectstart = function()
+    {
+      return false;
+    }
+    this.handle.onmousedown = this.handle.ontouchstart = function(e)
+    {
+      self.handleDownHandler(e);
+    };
+    this.wrapper.onmousedown = this.wrapper.ontouchstart = function(e)
+    {
+      self.wrapperDownHandler(e);
+    };
+    var mouseUpHandler = document.onmouseup || function(){};
+    document.onmouseup = function(e)
+    {
+      mouseUpHandler(e);
+      self.documentUpHandler(e);
+    };
+    var touchEndHandler = document.ontouchend || function(){};
+    document.ontouchend = function(e)
+    {
+      touchEndHandler(e);
+      self.documentUpHandler(e);
+    };
+    var resizeHandler = window.onresize || function(){};
+    window.onresize = function(e)
+    {
+      resizeHandler(e);
+      self.documentResizeHandler(e);
+    };
+    this.wrapper.onmousemove = function(e)
+    {
+      self.activity = true;
+    }
+    this.wrapper.onclick = function(e)
+    {
+      return !self.activity;
+    }
+    
+    this.interval = setInterval(function(){ self.animate() }, 25);
+    self.animate(false, true);
+  },
+  handleDownHandler: function(e)
+  {
+    this.activity = false;
+    Cursor.refresh(e);
+    
+    this.preventDefaults(e, true);
+    this.startDrag();
+  },
+  wrapperDownHandler: function(e)
+  {
+    Cursor.refresh(e);
+    
+    this.preventDefaults(e, true);
+    this.startTap();
+  },
+  documentUpHandler: function(e)
+  {
+    this.stopDrag();
+    this.stopTap();
+  },
+  documentResizeHandler: function(e)
+  {
+    this.setWrapperOffset();
+    this.setBounds();
+    
+    this.update();
+  },
+  enable: function()
+  {
+    this.disabled = false;
+    this.handle.className = this.handle.className.replace(/\s?disabled/g, '');
+  },
+  disable: function()
+  {
+    this.disabled = true;
+    this.handle.className += ' disabled';
+  },
+  setStep: function(x, y, snap)
+  {
+    this.setValue(
+      this.steps && x > 1 ? (x - 1) / (this.steps - 1) : 0,
+      this.steps && y > 1 ? (y - 1) / (this.steps - 1) : 0,
+      snap
+    );
+  },
+  setValue: function(x, y, snap)
+  {
+    this.setTargetValue([x, y || 0]);
+    if(snap)
+    {
+      this.groupCopy(this.value.current, this.value.target);
+    }
+  },
+  startTap: function(target)
+  {
+    if(this.disabled)
+    {
+      return;
+    }
+    this.tapping = true;
 
-		this.setWrapperOffset();
-		this.setBounds();
+    this.setWrapperOffset();
+    this.setBounds();
 
-		if(target === undefined)
-		{
-			target = [
-				Cursor.x - this.offset.wrapper[0] - (this.handle.offsetWidth / 2),
-				Cursor.y - this.offset.wrapper[1] - (this.handle.offsetHeight / 2)
-			];
-		}
-		this.setTargetOffset(target);
-	},
-	stopTap: function()
-	{
-		if(this.disabled || !this.tapping)
-		{
-			return;
-		}
-		this.tapping = false;
-		
-		this.setTargetValue(this.value.current);
-		this.result();
-	},
-	startDrag: function()
-	{
-		if(this.disabled)
-		{
-			return;
-		}
+    if(target === undefined)
+    {
+      target = [
+        Cursor.x - this.offset.wrapper[0] - (this.handle.offsetWidth / 2),
+        Cursor.y - this.offset.wrapper[1] - (this.handle.offsetHeight / 2)
+      ];
+    }
+    this.setTargetOffset(target);
+  },
+  stopTap: function()
+  {
+    if(this.disabled || !this.tapping)
+    {
+      return;
+    }
+    this.tapping = false;
+    
+    this.setTargetValue(this.value.current);
+    this.result();
+  },
+  startDrag: function()
+  {
+    if(this.disabled)
+    {
+      return;
+    }
 
-		this.setWrapperOffset();
-		this.setBounds();
+    this.setWrapperOffset();
+    this.setBounds();
 
-		this.offset.mouse = [
-			Cursor.x - Position.get(this.handle)[0],
-			Cursor.y - Position.get(this.handle)[1]
-		];
-		
-		this.dragging = true;
-	},
-	stopDrag: function()
-	{
-		if(this.disabled || !this.dragging)
-		{
-			return;
-		}
-		this.dragging = false;
-		
-		var target = this.groupClone(this.value.current);
-		if(this.slide)
-		{
-			var ratioChange = this.change;
-			target[0] += ratioChange[0] * 4;
-			target[1] += ratioChange[1] * 4;
-		}
-		this.setTargetValue(target);
-		this.result();
-	},
-	feedback: function()
-	{
-		var value = this.value.current;
-		if(this.snap && this.steps > 1)
-		{
-			value = this.getClosestSteps(value);
-		}
-		if(!this.groupCompare(value, this.value.prev))
-		{
-			if(typeof(this.animationCallback) == 'function')
-			{
-				this.animationCallback(value[0], value[1]);
-			}
-			this.groupCopy(this.value.prev, value);
-		}
-	},
-	result: function()
-	{
-		if(typeof(this.callback) == 'function')
-		{
-			this.callback(this.value.target[0], this.value.target[1]);
-		}
-	},
-	animate: function(direct, first)
-	{
-		if(direct && !this.dragging)
-		{
-			return;
-		}
-		if(this.dragging)
-		{
-			var prevTarget = this.groupClone(this.value.target);
-			
-			var offset = [
-				Cursor.x - this.offset.wrapper[0] - this.offset.mouse[0],
-				Cursor.y - this.offset.wrapper[1] - this.offset.mouse[1]
-			];
-			this.setTargetOffset(offset, this.loose);
-			
-			this.change = [
-				this.value.target[0] - prevTarget[0],
-				this.value.target[1] - prevTarget[1]
-			];
-		}
-		if(this.dragging || first)
-		{
-			this.groupCopy(this.value.current, this.value.target);
-		}
-		if(this.dragging || this.glide() || first)
-		{
-			this.update();
-			this.feedback();
-		}
-	},
-	glide: function()
-	{
-		var diff = [
-			this.value.target[0] - this.value.current[0],
-			this.value.target[1] - this.value.current[1]
-		];
-		if(!diff[0] && !diff[1])
-		{
-			return false;
-		}
-		if(Math.abs(diff[0]) > this.bounds.xStep || Math.abs(diff[1]) > this.bounds.yStep)
-		{
-			this.value.current[0] += diff[0] * this.speed;
-			this.value.current[1] += diff[1] * this.speed;
-		}
-		else
-		{
-			this.groupCopy(this.value.current, this.value.target);
-		}
-		return true;
-	},
-	update: function()
-	{
-		if(!this.snap)
-		{
-			this.offset.current = this.getOffsetsByRatios(this.value.current);
-		}
-		else
-		{
-			this.offset.current = this.getOffsetsByRatios(
-				this.getClosestSteps(this.value.current)
-			);
-		}
-		this.show();
-	},
-	show: function()
-	{
-		if(!this.groupCompare(this.offset.current, this.offset.prev))
-		{
-			if(this.horizontal)
-			{
-				this.handle.style.left = String(this.offset.current[0]) + 'px';
-			}
-			if(this.vertical)
-			{
-				this.handle.style.top = String(this.offset.current[1]) + 'px';
-			}
-			this.groupCopy(this.offset.prev, this.offset.current);
-		}
-	},
-	setTargetValue: function(value, loose)
-	{
-		var target = loose ? this.getLooseValue(value) : this.getProperValue(value);
-		
-		this.groupCopy(this.value.target, target);
-		this.offset.target = this.getOffsetsByRatios(target);
-	},
-	setTargetOffset: function(offset, loose)
-	{
-		var value = this.getRatiosByOffsets(offset);
-		var target = loose ? this.getLooseValue(value) : this.getProperValue(value);
-		
-		this.groupCopy(this.value.target, target);
-		this.offset.target = this.getOffsetsByRatios(target);
-	},
-	getLooseValue: function(value)
-	{
-		var proper = this.getProperValue(value);
-		return [
-			proper[0] + ((value[0] - proper[0]) / 4),
-			proper[1] + ((value[1] - proper[1]) / 4)
-		];
-	},
-	getProperValue: function(value)
-	{
-		var proper = this.groupClone(value);
+    this.offset.mouse = [
+      Cursor.x - Position.get(this.handle)[0],
+      Cursor.y - Position.get(this.handle)[1]
+    ];
+    
+    this.dragging = true;
+  },
+  stopDrag: function()
+  {
+    if(this.disabled || !this.dragging)
+    {
+      return;
+    }
+    this.dragging = false;
+    
+    var target = this.groupClone(this.value.current);
+    if(this.slide)
+    {
+      var ratioChange = this.change;
+      target[0] += ratioChange[0] * 4;
+      target[1] += ratioChange[1] * 4;
+    }
+    this.setTargetValue(target);
+    this.result();
+  },
+  feedback: function()
+  {
+    var value = this.value.current;
+    if(this.snap && this.steps > 1)
+    {
+      value = this.getClosestSteps(value);
+    }
+    if(!this.groupCompare(value, this.value.prev))
+    {
+      if(typeof(this.animationCallback) == 'function')
+      {
+        this.animationCallback(value[0], value[1]);
+      }
+      this.groupCopy(this.value.prev, value);
+    }
+  },
+  result: function()
+  {
+    if(typeof(this.callback) == 'function')
+    {
+      this.callback(this.value.target[0], this.value.target[1]);
+    }
+  },
+  animate: function(direct, first)
+  {
+    if(direct && !this.dragging)
+    {
+      return;
+    }
+    if(this.dragging)
+    {
+      var prevTarget = this.groupClone(this.value.target);
+      
+      var offset = [
+        Cursor.x - this.offset.wrapper[0] - this.offset.mouse[0],
+        Cursor.y - this.offset.wrapper[1] - this.offset.mouse[1]
+      ];
+      this.setTargetOffset(offset, this.loose);
+      
+      this.change = [
+        this.value.target[0] - prevTarget[0],
+        this.value.target[1] - prevTarget[1]
+      ];
+    }
+    if(this.dragging || first)
+    {
+      this.groupCopy(this.value.current, this.value.target);
+    }
+    if(this.dragging || this.glide() || first)
+    {
+      this.update();
+      this.feedback();
+    }
+  },
+  glide: function()
+  {
+    var diff = [
+      this.value.target[0] - this.value.current[0],
+      this.value.target[1] - this.value.current[1]
+    ];
+    if(!diff[0] && !diff[1])
+    {
+      return false;
+    }
+    if(Math.abs(diff[0]) > this.bounds.xStep || Math.abs(diff[1]) > this.bounds.yStep)
+    {
+      this.value.current[0] += diff[0] * this.speed;
+      this.value.current[1] += diff[1] * this.speed;
+    }
+    else
+    {
+      this.groupCopy(this.value.current, this.value.target);
+    }
+    return true;
+  },
+  update: function()
+  {
+    if(!this.snap)
+    {
+      this.offset.current = this.getOffsetsByRatios(this.value.current);
+    }
+    else
+    {
+      this.offset.current = this.getOffsetsByRatios(
+        this.getClosestSteps(this.value.current)
+      );
+    }
+    this.show();
+  },
+  show: function()
+  {
+    if(!this.groupCompare(this.offset.current, this.offset.prev))
+    {
+      if(this.horizontal)
+      {
+        this.handle.style.left = String(this.offset.current[0]) + 'px';
+      }
+      if(this.vertical)
+      {
+        this.handle.style.top = String(this.offset.current[1]) + 'px';
+      }
+      this.groupCopy(this.offset.prev, this.offset.current);
+    }
+  },
+  setTargetValue: function(value, loose)
+  {
+    var target = loose ? this.getLooseValue(value) : this.getProperValue(value);
+    
+    this.groupCopy(this.value.target, target);
+    this.offset.target = this.getOffsetsByRatios(target);
+  },
+  setTargetOffset: function(offset, loose)
+  {
+    var value = this.getRatiosByOffsets(offset);
+    var target = loose ? this.getLooseValue(value) : this.getProperValue(value);
+    
+    this.groupCopy(this.value.target, target);
+    this.offset.target = this.getOffsetsByRatios(target);
+  },
+  getLooseValue: function(value)
+  {
+    var proper = this.getProperValue(value);
+    return [
+      proper[0] + ((value[0] - proper[0]) / 4),
+      proper[1] + ((value[1] - proper[1]) / 4)
+    ];
+  },
+  getProperValue: function(value)
+  {
+    var proper = this.groupClone(value);
 
-		proper[0] = Math.max(proper[0], 0);
-		proper[1] = Math.max(proper[1], 0);
-		proper[0] = Math.min(proper[0], 1);
-		proper[1] = Math.min(proper[1], 1);
+    proper[0] = Math.max(proper[0], 0);
+    proper[1] = Math.max(proper[1], 0);
+    proper[0] = Math.min(proper[0], 1);
+    proper[1] = Math.min(proper[1], 1);
 
-		if((!this.dragging && !this.tapping) || this.snap)
-		{
-			if(this.steps > 1)
-			{
-				proper = this.getClosestSteps(proper);
-			}
-		}
-		return proper;
-	},
-	getRatiosByOffsets: function(group)
-	{
-		return [
-			this.getRatioByOffset(group[0], this.bounds.xRange, this.bounds.x0),
-			this.getRatioByOffset(group[1], this.bounds.yRange, this.bounds.y0)
-		];
-	},
-	getRatioByOffset: function(offset, range, padding)
-	{
-		return range ? (offset - padding) / range : 0;
-	},
-	getOffsetsByRatios: function(group)
-	{
-		return [
-			this.getOffsetByRatio(group[0], this.bounds.xRange, this.bounds.x0),
-			this.getOffsetByRatio(group[1], this.bounds.yRange, this.bounds.y0)
-		];
-	},
-	getOffsetByRatio: function(ratio, range, padding)
-	{
-		return Math.round(ratio * range) + padding;
-	},
-	getClosestSteps: function(group)
-	{
-		return [
-			this.getClosestStep(group[0]),
-			this.getClosestStep(group[1])
-		];
-	},
-	getClosestStep: function(value)
-	{
-		var k = 0;
-		var min = 1;
-		for(var i = 0; i <= this.steps - 1; i++)
-		{
-			if(Math.abs(this.stepRatios[i] - value) < min)
-			{
-				min = Math.abs(this.stepRatios[i] - value);
-				k = i;
-			}
-		}
-		return this.stepRatios[k];
-	},
-	groupCompare: function(a, b)
-	{
-		return a[0] == b[0] && a[1] == b[1];
-	},
-	groupCopy: function(a, b)
-	{
-		a[0] = b[0];
-		a[1] = b[1];
-	},
-	groupClone: function(a)
-	{
-		return [a[0], a[1]];
-	},
-	preventDefaults: function(e, selection)
-	{
-		if(!e)
-		{
-			e = window.event;
-		}
-		if(e.preventDefault)
-		{
-			e.preventDefault();
-		}
-		e.returnValue = false;
-		
-		if(selection && document.selection)
-		{
-			document.selection.empty();
-		}
-	},
-	cancelEvent: function(e)
-	{
-		if(!e)
-		{
-			e = window.event;
-		}
-		if(e.stopPropagation)
-		{
-			e.stopPropagation();
-		}
-		e.cancelBubble = true;
-	}
+    if((!this.dragging && !this.tapping) || this.snap)
+    {
+      if(this.steps > 1)
+      {
+        proper = this.getClosestSteps(proper);
+      }
+    }
+    return proper;
+  },
+  getRatiosByOffsets: function(group)
+  {
+    return [
+      this.getRatioByOffset(group[0], this.bounds.xRange, this.bounds.x0),
+      this.getRatioByOffset(group[1], this.bounds.yRange, this.bounds.y0)
+    ];
+  },
+  getRatioByOffset: function(offset, range, padding)
+  {
+    return range ? (offset - padding) / range : 0;
+  },
+  getOffsetsByRatios: function(group)
+  {
+    return [
+      this.getOffsetByRatio(group[0], this.bounds.xRange, this.bounds.x0),
+      this.getOffsetByRatio(group[1], this.bounds.yRange, this.bounds.y0)
+    ];
+  },
+  getOffsetByRatio: function(ratio, range, padding)
+  {
+    return Math.round(ratio * range) + padding;
+  },
+  getClosestSteps: function(group)
+  {
+    return [
+      this.getClosestStep(group[0]),
+      this.getClosestStep(group[1])
+    ];
+  },
+  getClosestStep: function(value)
+  {
+    var k = 0;
+    var min = 1;
+    for(var i = 0; i <= this.steps - 1; i++)
+    {
+      if(Math.abs(this.stepRatios[i] - value) < min)
+      {
+        min = Math.abs(this.stepRatios[i] - value);
+        k = i;
+      }
+    }
+    return this.stepRatios[k];
+  },
+  groupCompare: function(a, b)
+  {
+    return a[0] == b[0] && a[1] == b[1];
+  },
+  groupCopy: function(a, b)
+  {
+    a[0] = b[0];
+    a[1] = b[1];
+  },
+  groupClone: function(a)
+  {
+    return [a[0], a[1]];
+  },
+  preventDefaults: function(e, selection)
+  {
+    if(!e)
+    {
+      e = window.event;
+    }
+    if(e.preventDefault)
+    {
+      e.preventDefault();
+    }
+    e.returnValue = false;
+    
+    if(selection && document.selection)
+    {
+      document.selection.empty();
+    }
+  },
+  cancelEvent: function(e)
+  {
+    if(!e)
+    {
+      e = window.event;
+    }
+    if(e.stopPropagation)
+    {
+      e.stopPropagation();
+    }
+    e.cancelBubble = true;
+  }
 };
 
 /*! Copyright (c) 2013 Brandon Aaron (http://brandonaaron.net)
@@ -13831,521 +14070,3 @@ Dragdealer.prototype =
 }));
 
 })(jQuery, window, Handsontable);
-// numeral.js
-// version : 1.4.7
-// author : Adam Draper
-// license : MIT
-// http://adamwdraper.github.com/Numeral-js/
-
-(function () {
-
-    /************************************
-        Constants
-    ************************************/
-
-    var numeral,
-        VERSION = '1.4.7',
-        // internal storage for language config files
-        languages = {},
-        currentLanguage = 'en',
-        zeroFormat = null,
-        // check for nodeJS
-        hasModule = (typeof module !== 'undefined' && module.exports);
-
-
-    /************************************
-        Constructors
-    ************************************/
-
-
-    // Numeral prototype object
-    function Numeral (number) {
-        this._n = number;
-    }
-
-    /**
-     * Implementation of toFixed() that treats floats more like decimals
-     *
-     * Fixes binary rounding issues (eg. (0.615).toFixed(2) === '0.61') that present
-     * problems for accounting- and finance-related software.
-     */
-    function toFixed (value, precision, optionals) {
-        var power = Math.pow(10, precision),
-            output;
-
-        // Multiply up by precision, round accurately, then divide and use native toFixed():
-        output = (Math.round(value * power) / power).toFixed(precision);
-
-        if (optionals) {
-            var optionalsRegExp = new RegExp('0{1,' + optionals + '}$');
-            output = output.replace(optionalsRegExp, '');
-        }
-
-        return output;
-    }
-
-    /************************************
-        Formatting
-    ************************************/
-
-    // determine what type of formatting we need to do
-    function formatNumeral (n, format) {
-        var output;
-
-        // figure out what kind of format we are dealing with
-        if (format.indexOf('$') > -1) { // currency!!!!!
-            output = formatCurrency(n, format);
-        } else if (format.indexOf('%') > -1) { // percentage
-            output = formatPercentage(n, format);
-        } else if (format.indexOf(':') > -1) { // time
-            output = formatTime(n, format);
-        } else { // plain ol' numbers or bytes
-            output = formatNumber(n, format);
-        }
-
-        // return string
-        return output;
-    }
-
-    // revert to number
-    function unformatNumeral (n, string) {
-        if (string.indexOf(':') > -1) {
-            n._n = unformatTime(string);
-        } else {
-            if (string === zeroFormat) {
-                n._n = 0;
-            } else {
-                var stringOriginal = string;
-                if (languages[currentLanguage].delimiters.decimal !== '.') {
-                    string = string.replace(/\./g,'').replace(languages[currentLanguage].delimiters.decimal, '.');
-                }
-
-                // see if abbreviations are there so that we can multiply to the correct number
-                var thousandRegExp = new RegExp(languages[currentLanguage].abbreviations.thousand + '(?:\\)|(\\' + languages[currentLanguage].currency.symbol + ')?(?:\\))?)?$'),
-                    millionRegExp = new RegExp(languages[currentLanguage].abbreviations.million + '(?:\\)|(\\' + languages[currentLanguage].currency.symbol + ')?(?:\\))?)?$'),
-                    billionRegExp = new RegExp(languages[currentLanguage].abbreviations.billion + '(?:\\)|(\\' + languages[currentLanguage].currency.symbol + ')?(?:\\))?)?$'),
-                    trillionRegExp = new RegExp(languages[currentLanguage].abbreviations.trillion + '(?:\\)|(\\' + languages[currentLanguage].currency.symbol + ')?(?:\\))?)?$');
-
-                // see if bytes are there so that we can multiply to the correct number
-                var prefixes = ['KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
-                    bytesMultiplier = false;
-
-                for (var power = 0; power <= prefixes.length; power++) {
-                    bytesMultiplier = (string.indexOf(prefixes[power]) > -1) ? Math.pow(1024, power + 1) : false;
-
-                    if (bytesMultiplier) {
-                        break;
-                    }
-                }
-
-                // do some math to create our number
-                n._n = ((bytesMultiplier) ? bytesMultiplier : 1) * ((stringOriginal.match(thousandRegExp)) ? Math.pow(10, 3) : 1) * ((stringOriginal.match(millionRegExp)) ? Math.pow(10, 6) : 1) * ((stringOriginal.match(billionRegExp)) ? Math.pow(10, 9) : 1) * ((stringOriginal.match(trillionRegExp)) ? Math.pow(10, 12) : 1) * ((string.indexOf('%') > -1) ? 0.01 : 1) * Number(((string.indexOf('(') > -1) ? '-' : '') + string.replace(/[^0-9\.-]+/g, ''));
-
-                // round if we are talking about bytes
-                n._n = (bytesMultiplier) ? Math.ceil(n._n) : n._n;
-            }
-        }
-        return n._n;
-    }
-
-    function formatCurrency (n, format) {
-        var prependSymbol = (format.indexOf('$') <= 1) ? true : false;
-
-        // remove $ for the moment
-        var space = '';
-
-        // check for space before or after currency
-        if (format.indexOf(' $') > -1) {
-            space = ' ';
-            format = format.replace(' $', '');
-        } else if (format.indexOf('$ ') > -1) {
-            space = ' ';
-            format = format.replace('$ ', '');
-        } else {
-            format = format.replace('$', '');
-        }
-
-        // format the number
-        var output = formatNumeral(n, format);
-
-        // position the symbol
-        if (prependSymbol) {
-            if (output.indexOf('(') > -1 || output.indexOf('-') > -1) {
-                output = output.split('');
-                output.splice(1, 0, languages[currentLanguage].currency.symbol + space);
-                output = output.join('');
-            } else {
-                output = languages[currentLanguage].currency.symbol + space + output;
-            }
-        } else {
-            if (output.indexOf(')') > -1) {
-                output = output.split('');
-                output.splice(-1, 0, space + languages[currentLanguage].currency.symbol);
-                output = output.join('');
-            } else {
-                output = output + space + languages[currentLanguage].currency.symbol;
-            }
-        }
-
-        return output;
-    }
-
-    function formatPercentage (n, format) {
-        var space = '';
-        // check for space before %
-        if (format.indexOf(' %') > -1) {
-            space = ' ';
-            format = format.replace(' %', '');
-        } else {
-            format = format.replace('%', '');
-        }
-
-        n._n = n._n * 100;
-        var output = formatNumeral(n, format);
-        if (output.indexOf(')') > -1 ) {
-            output = output.split('');
-            output.splice(-1, 0, space + '%');
-            output = output.join('');
-        } else {
-            output = output + space + '%';
-        }
-        return output;
-    }
-
-    function formatTime (n, format) {
-        var hours = Math.floor(n._n/60/60),
-            minutes = Math.floor((n._n - (hours * 60 * 60))/60),
-            seconds = Math.round(n._n - (hours * 60 * 60) - (minutes * 60));
-        return hours + ':' + ((minutes < 10) ? '0' + minutes : minutes) + ':' + ((seconds < 10) ? '0' + seconds : seconds);
-    }
-
-    function unformatTime (string) {
-        var timeArray = string.split(':'),
-            seconds = 0;
-        // turn hours and minutes into seconds and add them all up
-        if (timeArray.length === 3) {
-            // hours
-            seconds = seconds + (Number(timeArray[0]) * 60 * 60);
-            // minutes
-            seconds = seconds + (Number(timeArray[1]) * 60);
-            // seconds
-            seconds = seconds + Number(timeArray[2]);
-        } else if (timeArray.lenght === 2) {
-            // minutes
-            seconds = seconds + (Number(timeArray[0]) * 60);
-            // seconds
-            seconds = seconds + Number(timeArray[1]);
-        }
-        return Number(seconds);
-    }
-
-    function formatNumber (n, format) {
-        var negP = false,
-            optDec = false,
-            abbr = '',
-            bytes = '',
-            ord = '',
-            abs = Math.abs(n._n);
-
-        // check if number is zero and a custom zero format has been set
-        if (n._n === 0 && zeroFormat !== null) {
-            return zeroFormat;
-        } else {
-            // see if we should use parentheses for negative number
-            if (format.indexOf('(') > -1) {
-                negP = true;
-                format = format.slice(1, -1);
-            }
-
-            // see if abbreviation is wanted
-            if (format.indexOf('a') > -1) {
-                // check for space before abbreviation
-                if (format.indexOf(' a') > -1) {
-                    abbr = ' ';
-                    format = format.replace(' a', '');
-                } else {
-                    format = format.replace('a', '');
-                }
-
-                if (abs >= Math.pow(10, 12)) {
-                    // trillion
-                    abbr = abbr + languages[currentLanguage].abbreviations.trillion;
-                    n._n = n._n / Math.pow(10, 12);
-                } else if (abs < Math.pow(10, 12) && abs >= Math.pow(10, 9)) {
-                    // billion
-                    abbr = abbr + languages[currentLanguage].abbreviations.billion;
-                    n._n = n._n / Math.pow(10, 9);
-                } else if (abs < Math.pow(10, 9) && abs >= Math.pow(10, 6)) {
-                    // million
-                    abbr = abbr + languages[currentLanguage].abbreviations.million;
-                    n._n = n._n / Math.pow(10, 6);
-                } else if (abs < Math.pow(10, 6) && abs >= Math.pow(10, 3)) {
-                    // thousand
-                    abbr = abbr + languages[currentLanguage].abbreviations.thousand;
-                    n._n = n._n / Math.pow(10, 3);
-                }
-            }
-
-            // see if we are formatting bytes
-            if (format.indexOf('b') > -1) {
-                // check for space before
-                if (format.indexOf(' b') > -1) {
-                    bytes = ' ';
-                    format = format.replace(' b', '');
-                } else {
-                    format = format.replace('b', '');
-                }
-
-                var prefixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
-                    min,
-                    max;
-
-                for (var power = 0; power <= prefixes.length; power++) {
-                    min = Math.pow(1024, power);
-                    max = Math.pow(1024, power+1);
-
-                    if (n._n >= min && n._n < max) {
-                        bytes = bytes + prefixes[power];
-                        if (min > 0) {
-                            n._n = n._n / min;
-                        }
-                        break;
-                    }
-                }
-            }
-
-            // see if ordinal is wanted
-            if (format.indexOf('o') > -1) {
-                // check for space before
-                if (format.indexOf(' o') > -1) {
-                    ord = ' ';
-                    format = format.replace(' o', '');
-                } else {
-                    format = format.replace('o', '');
-                }
-
-                ord = ord + languages[currentLanguage].ordinal(n._n);
-            }
-
-            if (format.indexOf('[.]') > -1) {
-                optDec = true;
-                format = format.replace('[.]', '.');
-            }
-
-            var w = n._n.toString().split('.')[0],
-                precision = format.split('.')[1],
-                thousands = format.indexOf(','),
-                d = '',
-                neg = false;
-
-            if (precision) {
-                if (precision.indexOf('[') > -1) {
-                    precision = precision.replace(']', '');
-                    precision = precision.split('[');
-                    d = toFixed(n._n, (precision[0].length + precision[1].length), precision[1].length);
-                } else {
-                    d = toFixed(n._n, precision.length);
-                }
-
-                w = d.split('.')[0];
-
-                if (d.split('.')[1].length) {
-                    d = languages[currentLanguage].delimiters.decimal + d.split('.')[1];
-                } else {
-                    d = '';
-                }
-
-                if (optDec && Number(d) === 0) {
-                    d = '';
-                }
-            } else {
-                w = toFixed(n._n, null);
-            }
-
-            // format number
-            if (w.indexOf('-') > -1) {
-                w = w.slice(1);
-                neg = true;
-            }
-
-            if (thousands > -1) {
-                w = w.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1' + languages[currentLanguage].delimiters.thousands);
-            }
-
-            if (format.indexOf('.') === 0) {
-                w = '';
-            }
-
-            return ((negP && neg) ? '(' : '') + ((!negP && neg) ? '-' : '') + w + d + ((ord) ? ord : '') + ((abbr) ? abbr : '') + ((bytes) ? bytes : '') + ((negP && neg) ? ')' : '');
-        }
-    }
-
-    /************************************
-        Top Level Functions
-    ************************************/
-
-    numeral = function (input) {
-        if (numeral.isNumeral(input)) {
-            input = input.value();
-        } else if (!Number(input)) {
-            input = 0;
-        }
-
-        return new Numeral(Number(input));
-    };
-
-    // version number
-    numeral.version = VERSION;
-
-    // compare numeral object
-    numeral.isNumeral = function (obj) {
-        return obj instanceof Numeral;
-    };
-
-    // This function will load languages and then set the global language.  If
-    // no arguments are passed in, it will simply return the current global
-    // language key.
-    numeral.language = function (key, values) {
-        if (!key) {
-            return currentLanguage;
-        }
-
-        if (key && !values) {
-            currentLanguage = key;
-        }
-
-        if (values || !languages[key]) {
-            loadLanguage(key, values);
-        }
-
-        return numeral;
-    };
-
-    numeral.language('en', {
-        delimiters: {
-            thousands: ',',
-            decimal: '.'
-        },
-        abbreviations: {
-            thousand: 'k',
-            million: 'm',
-            billion: 'b',
-            trillion: 't'
-        },
-        ordinal: function (number) {
-            var b = number % 10;
-            return (~~ (number % 100 / 10) === 1) ? 'th' :
-                (b === 1) ? 'st' :
-                (b === 2) ? 'nd' :
-                (b === 3) ? 'rd' : 'th';
-        },
-        currency: {
-            symbol: '$'
-        }
-    });
-
-    numeral.zeroFormat = function (format) {
-        if (typeof(format) === 'string') {
-            zeroFormat = format;
-        } else {
-            zeroFormat = null;
-        }
-    };
-
-    /************************************
-        Helpers
-    ************************************/
-
-    function loadLanguage(key, values) {
-        languages[key] = values;
-    }
-
-
-    /************************************
-        Numeral Prototype
-    ************************************/
-
-
-    numeral.fn = Numeral.prototype = {
-
-        clone : function () {
-            return numeral(this);
-        },
-
-        format : function (inputString) {
-            return formatNumeral(this, inputString ? inputString : numeral.defaultFormat);
-        },
-
-        unformat : function (inputString) {
-            return unformatNumeral(this, inputString ? inputString : numeral.defaultFormat);
-        },
-
-        value : function () {
-            return this._n;
-        },
-
-        valueOf : function () {
-            return this._n;
-        },
-
-        set : function (value) {
-            this._n = Number(value);
-            return this;
-        },
-
-        add : function (value) {
-            this._n = this._n + Number(value);
-            return this;
-        },
-
-        subtract : function (value) {
-            this._n = this._n - Number(value);
-            return this;
-        },
-
-        multiply : function (value) {
-            this._n = this._n * Number(value);
-            return this;
-        },
-
-        divide : function (value) {
-            this._n = this._n / Number(value);
-            return this;
-        },
-
-        difference : function (value) {
-            var difference = this._n - Number(value);
-
-            if (difference < 0) {
-                difference = -difference;
-            }
-
-            return difference;
-        }
-
-    };
-
-    /************************************
-        Exposing Numeral
-    ************************************/
-
-    // CommonJS module is defined
-    if (hasModule) {
-        module.exports = numeral;
-    }
-
-    /*global ender:false */
-    if (typeof ender === 'undefined') {
-        // here, `this` means `window` in the browser, or `global` on the server
-        // add `numeral` as a global object via a string identifier,
-        // for Closure Compiler 'advanced' mode
-        this['numeral'] = numeral;
-    }
-
-    /*global define:false */
-    if (typeof define === 'function' && define.amd) {
-        define([], function () {
-            return numeral;
-        });
-    }
-}).call(this);
