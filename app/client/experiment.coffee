@@ -118,6 +118,7 @@ Template.oneFunction.events
 
 Template.controls.events
 	"click .btn-step": (event, template) ->
-		
 		template.data.engine.step()
+	"click .btn-play": (event, template) ->
+		template.data.engine.play()
 		
