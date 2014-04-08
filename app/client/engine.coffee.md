@@ -44,24 +44,35 @@
 			@_compiledExpression = []
 			cursor.forEach (aFunction) => 
 				type = @types[aFunction.variable]
-				console.log aFunction
+				
 				
 				if type?
 					expr = aFunction.expression
+
+we have every object in an array. The current object is always index i. 
+We therefore change the expressions slightly and add an index [i] to them
+So if an object is a vector, we have a 2-dimensional matrix, the syntax is then with [i,:]
 			
+
+first we change the expressions (right of = )
+
 					for variable, objectType of @types
-						
-						
 						regex = new RegExp "\\b#{variable}\\b", "g"
-						expr = expr.replace regex, "#{variable}[i]"
-						
+						switch objectType
+							when "Scalar" then expr = expr.replace regex, "#{variable}[i]"
+							when "Vector" then expr = expr.replace regex, "#{variable}[i,:]"
+
+now we change the assign var (left of = )						
+
 					switch type
 						when "Scalar" then variableForAssign = "#{aFunction.variable}[i]"
 						when "Vector" then variableForAssign = "#{aFunction.variable}[i,:]"
 					fullExpression = "#{variableForAssign} = #{expr}"
 					
+					console.log fullExpression
+
 					try
-						@_compiledExpression.push variable: aFunction.variable, expression: @math.compile fullExpression
+						@_compiledExpression.push @math.compile fullExpression
 					catch error
 						console.error error
 				
@@ -74,8 +85,8 @@
 					@math.scope.i = i+1
 					
 					for expression in @_compiledExpression
-						expression.expression.eval @math.scope
-			console.log @math.scope.x[0]
+						expression.eval @math.scope
+			console.log @math.scope
 			
 				
 		play: ->
