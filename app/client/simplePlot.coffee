@@ -5,10 +5,7 @@ chart = null
 series = {}
 
 clearChart = ->
-	for serie in chart.series
-		serie.setData []
-
-
+	serie.setData [] for serie in chart.series
 
 addSerieIfNeeded = (variable, index) ->
 	unless series[variable]?[index]?
@@ -26,7 +23,6 @@ initHighcharts = (container)->
 			animation: false
 			height: 400
 		plotOptions:
-			
 			line:
 				marker: enabled: false
 				shadow: false
@@ -39,13 +35,11 @@ Template.simplePlot.events
 Template.simplePlot.rendered = ->
 	maxPoints = 100
 	chart =  initHighcharts @find ".chartcontainer"
-	
-	
 
 	variablesToPlot = ['x', 'v', 'a']
 	
 	Deps.autorun =>
-		lastResult = Session.get "lastResult"
+		lastResult = Session.get "currentScope"
 		
 		if lastResult?
 			for variable in variablesToPlot
@@ -58,7 +52,6 @@ Template.simplePlot.rendered = ->
 								# it is a vector, take its first dimension
 								value = value[0]
 								
-
 							shift = serie.data.length >= maxPoints
 							serie.addPoint value, false, shift, false
 

@@ -13,7 +13,11 @@
 			@initExperiment()
 			@initScope()
 			@initFunctions()
-			console.log @math.scope
+
+propagate initial scope
+
+			Session.set "currentScope", @math.scope
+			
 			
 		initExperiment: ->
 			experiment = Experiments.findOne _id: @experimentID
@@ -95,7 +99,7 @@ now we change the assign var (left of = )
 					for expression in @_compiledExpression
 						expression.eval @math.scope
 			
-			Session.set "lastResult", @math.scope
+			Session.set "currentScope", @math.scope
 			
 				
 		play: ->
