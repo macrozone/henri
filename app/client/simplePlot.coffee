@@ -3,9 +3,10 @@ initHighcharts = (container)->
 		chart: 
 			type: "line"
 			renderTo: container
-			animation: Highcharts.svg
+			animation: false
 		height: 800
 		plotOptions:
+			
 			line:
 				marker: enabled: false
 				shadow: false
@@ -25,9 +26,7 @@ Template.simplePlot.rendered = ->
 		series[variable][index]
 
 	variablesToPlot = ['x']
-	redraw = _.throttle -> 
-		chart.redraw()
-	, 300
+	
 	Deps.autorun =>
 		lastResult = Session.get "lastResult"
 		
@@ -40,7 +39,7 @@ Template.simplePlot.rendered = ->
 						
 							if _.isArray oneObject
 								shift = serie.data.length >= maxPoints
-								serie.addPoint oneObject[0], true, shift, false
+								serie.addPoint oneObject[0], false, shift, false
 
 							
-			#redraw()
+			chart.redraw()
