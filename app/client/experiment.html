@@ -3,10 +3,10 @@
 	
 	
 	{{>experimentName}}
-<div class="col-xs-12 col-sm-4">
+<div class="col-xs-6 col-sm-4">
 	{{>constantsEditor}}
 	</div>
-	<div class="col-xs-12 col-sm-4">
+	<div class="col-xs-6 col-sm-4">
 	{{>objectClassEditor}}
 	</div>
 	<div class="col-xs-12 col-sm-6">
@@ -16,8 +16,12 @@
 	{{>functions}}
 	</div>
 	
-<div class="col-xs-12 col-sm-12">
+	<div class="col-xs-12 col-sm-12">
 	{{>controls}}
+	</div>
+
+	<div class="col-xs-12 col-sm-12">
+	{{>simplePlot}}
 	</div>
 	
 
@@ -80,4 +84,8 @@
 <button class="btn btn-step">step</button>
 <button class="btn btn-play">play / pause</button>
 
+</template>
+
+<template name="simplePlot">
+<div class="chartcontainer"></div>
 </template>

@@ -1,4 +1,6 @@
 
+engine = null
+
 Router.map ->
 	@route 'experiment',
 		path: "/experiment/:_id",
@@ -7,8 +9,13 @@ Router.map ->
 		data: ->
 			if @ready()
 				Session.set "experimentID", @params._id
-				{experiment: Experiments.findOne({_id: @params._id}), engine: new Engine @params._id}
-				
+				{
+					experimentID: @params._id
+					experiment: Experiments.findOne({_id: @params._id}), 
+				}
+		onData: ->
+			engine = new Engine unless engine?
+			engine.init @params._id 
 		onBeforeAction: ->
 			@render "loading"
 
@@ -118,7 +125,7 @@ Template.oneFunction.events
 
 Template.controls.events
 	"click .btn-step": (event, template) ->
-		template.data.engine.step()
+		engine.step()
 	"click .btn-play": (event, template) ->
-		template.data.engine.play()
+		engine.play()
 		
