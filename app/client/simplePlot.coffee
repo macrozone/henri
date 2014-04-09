@@ -1,10 +1,11 @@
+math = mathjs()
 initHighcharts = (container)->
 	new Highcharts.Chart
 		chart: 
 			type: "line"
 			renderTo: container
 			animation: false
-		height: 800
+			height: 600
 		plotOptions:
 			
 			line:
@@ -25,7 +26,7 @@ Template.simplePlot.rendered = ->
 				name: "#{variable} #{index}"
 		series[variable][index]
 
-	variablesToPlot = ['x']
+	variablesToPlot = ['x', 'v', 'a']
 	
 	Deps.autorun =>
 		lastResult = Session.get "lastResult"
@@ -34,12 +35,16 @@ Template.simplePlot.rendered = ->
 			for variable in variablesToPlot
 				if lastResult[variable]?
 					if _.isArray lastResult[variable]
-						for oneObject, index in lastResult[variable]
+						for value, index in lastResult[variable]
 							serie = addSerieIfNeeded variable, index
 						
-							if _.isArray oneObject
-								shift = serie.data.length >= maxPoints
-								serie.addPoint oneObject[0], false, shift, false
+							if _.isArray value
+								# it is a vector, take its first dimension
+								value = value[0]
+								
+
+							shift = serie.data.length >= maxPoints
+							serie.addPoint value, false, shift, false
 
 							
 			chart.redraw()
