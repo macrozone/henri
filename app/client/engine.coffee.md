@@ -2,9 +2,20 @@
 
 	@Engine = class
 		
-		constructor: (@experimentID) ->
+		constructor: () ->
 			@math = mathjs().parser()
-			window.foo = @math
+
+			
+				
+		
+		init: (@experimentID)->
+		
+			@initExperiment()
+			@initScope()
+			@initFunctions()
+			console.log @math.scope
+			
+		initExperiment: ->
 			experiment = Experiments.findOne _id: @experimentID
 			if experiment? and experiment.objectClass?
 				@constants = experiment.constants
@@ -14,29 +25,26 @@
 					{type:type, variable: variable} = oneVar
 					if type? and variable? and type.length > 0 and variable.length > 0
 						@types[variable] = type
-				@initScope()
-				@initFunctions()
-			
-			
 		initScope: ->
-			
-			for constant in @constants
-				{type:type, variable: variable, value:valueString} = constant
-				if type? and valueString? and variable?
-					value = parseValue valueString, type
-					@math.scope[variable] = value
+			@math.scope = {}
+			if @constants?
+				for constant in @constants
+					{type:type, variable: variable, value:valueString} = constant
+					if type? and valueString? and variable?
+						value = parseValue valueString, type
+						@math.scope[variable] = value
+			if @objects?
+				for anObject in @objects
 
-			for anObject in @objects
+					for variable, valueString of anObject
+						type = @types[variable]
+						if variable? and variable.length > 0 and valueString? and type?
 
-				for variable, valueString of anObject
-					type = @types[variable]
-					if variable? and variable.length > 0 and valueString? and type?
-
-						@math.scope[variable] = [] unless @math.scope[variable]?
+							@math.scope[variable] = [] unless @math.scope[variable]?
+							
+							@math.scope[variable].push parseValue valueString, type
 						
-						@math.scope[variable].push parseValue valueString, type
-						
-			#@math.set "dt", 1
+		
 			
 
 		initFunctions: ->
@@ -79,14 +87,15 @@ now we change the assign var (left of = )
 
 
 		step: ->
-			for j in [1..1]
+			for j in [1..4]
 				for object, i in @objects
 					
 					@math.scope.i = i+1
 					
 					for expression in @_compiledExpression
 						expression.eval @math.scope
-			console.log @math.scope.x[0]
+			
+			Session.set "lastResult", @math.scope
 			
 				
 		play: ->
@@ -98,7 +107,8 @@ now we change the assign var (left of = )
 					_.defer turn
 			turn()
 
-
+		stop: ->
+			@running = false
 		
 
 	parseValue = (value, type) ->
