@@ -21,10 +21,9 @@ Router.map ->
 			
 		onBeforeAction: ->
 			@render "loading"
+		onStop: ->
+			engine?.stop()
 			
-			
-
-
 Template.experimentName.events
 	"click h2": (event, template) ->
 		$(template.find("input")).show()
@@ -53,11 +52,11 @@ prepareExprForPretty = (expr, objectClass) ->
 
 
 onCommentChange = (event, template)->
-	console.log @, template
+
 	comment = $(event.target).val()
 	query = {experimentID: Session.get("experimentID"), variable: @variable}
 	functionID = Functions.findOne(query)?._id
-	console.log query
+
 	if functionID?
 		Functions.update {_id:functionID}, $set: comment: comment
 	else
@@ -133,4 +132,5 @@ Template.controls.events
 		template.data?.engine?.step()
 	"click .btn-play": (event, template) ->
 		template.data?.engine?.play()
+
 		
