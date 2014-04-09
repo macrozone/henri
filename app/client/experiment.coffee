@@ -8,16 +8,21 @@ Router.map ->
 			Meteor.subscribe 'experiments'
 		data: ->
 			if @ready()
+
 				Session.set "experimentID", @params._id
 				{
 					experimentID: @params._id
-					experiment: Experiments.findOne({_id: @params._id}), 
+					experiment: Experiments.findOne({_id: @params._id})
+					engine: engine
 				}
 		onData: ->
 			engine = new Engine unless engine?
 			engine.init @params._id 
+			
 		onBeforeAction: ->
 			@render "loading"
+			
+			
 
 
 Template.experimentName.events
@@ -125,7 +130,7 @@ Template.oneFunction.events
 
 Template.controls.events
 	"click .btn-step": (event, template) ->
-		engine.step()
+		template.data?.engine?.step()
 	"click .btn-play": (event, template) ->
-		engine.play()
+		template.data?.engine?.play()
 		

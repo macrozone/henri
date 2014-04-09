@@ -32,6 +32,8 @@ initHighcharts = (container)->
 Template.simplePlot.events
 	"click .btn-clear": clearChart
 
+
+
 Template.simplePlot.rendered = ->
 	maxPoints = 100
 	chart =  initHighcharts @find ".chartcontainer"
