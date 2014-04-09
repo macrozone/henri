@@ -1,4 +1,23 @@
+
+# local
 math = mathjs()
+chart = null
+series = {}
+
+clearChart = ->
+	for serie in chart.series
+		serie.setData []
+
+
+
+addSerieIfNeeded = (variable, index) ->
+	unless series[variable]?[index]?
+		series[variable] = [] unless series[variable]?
+		series[variable][index] = chart.addSeries 
+			data: []
+			name: "#{variable} #{index}"
+	series[variable][index]
+
 initHighcharts = (container)->
 	new Highcharts.Chart
 		chart: 
@@ -14,17 +33,14 @@ initHighcharts = (container)->
 
 
 
+Template.simplePlot.events
+	"click .btn-clear": clearChart
+
 Template.simplePlot.rendered = ->
 	maxPoints = 100
 	chart =  initHighcharts @find ".chartcontainer"
-	series = {}
-	addSerieIfNeeded = (variable, index) ->
-		unless series[variable]?[index]?
-			series[variable] = [] unless series[variable]?
-			series[variable][index] = chart.addSeries 
-				data: []
-				name: "#{variable} #{index}"
-		series[variable][index]
+	
+	
 
 	variablesToPlot = ['x', 'v', 'a']
 	
