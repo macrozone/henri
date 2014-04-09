@@ -5,7 +5,7 @@ initHighcharts = (container)->
 			type: "line"
 			renderTo: container
 			animation: false
-			height: 600
+			height: 500
 		plotOptions:
 			
 			line:
