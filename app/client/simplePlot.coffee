@@ -19,25 +19,15 @@ chartOptions =
 
 
 Template.simplePlot.events
-	"click .btn-clear": clearChart
+	"click .btn-clear": ->
+		serie.setData [] for serie in chart.series
 
-
-# a little optimisation with the "chartReady", this will cause the engine to wait publishing its initial state until the chart is ready
-# do not forget to set it to false when the chart is destroyed
-Session.set "chartReady", false
+compution = null
 Template.simplePlot.rendered = ->
 	chart = initHighcharts @find ".chartcontainer"
-	Session.set "chartReady", true
-
-Template.simplePlot.destroyed = ->
-	Session.set "chartReady", false
-	
-# plot it
-Deps.autorun ->
-	# wait for the chart to be ready
-	if Session.get "chartReady"
-		currentScope = Session.get "currentScope"
-	
+	engine = @data.engine
+	compution = Deps.autorun ->
+		currentScope = engine.getScope()
 		for variable in variablesToPlot
 			if currentScope?[variable]?
 				if _.isArray currentScope[variable]
@@ -52,9 +42,9 @@ Deps.autorun ->
 						serie.addPoint value, false, shift, false
 		chart.redraw()
 
+Template.simplePlot.destroyed = ->
+	compution?.stop()
 
-clearChart = ->
-	serie.setData [] for serie in chart.series
 
 initHighcharts = (container)->
 	series = {}

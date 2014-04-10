@@ -7,22 +7,28 @@ Router.map ->
 		waitOn: ->
 			Meteor.subscribe 'experiments'
 		data: ->
-			if @ready()
-
-				Session.set "experimentID", @params._id
-				{
-					experimentID: @params._id
-					experiment: Experiments.findOne({_id: @params._id})
-					engine: engine
-				}
-		onData: ->
+			
 			engine = new Engine unless engine?
 			engine.init @params._id 
+			Session.set "experimentID", @params._id
+			{
+				experimentID: @params._id
+				experiment: Experiments.findOne({_id: @params._id})
+				engine: engine
+			}
+
+		
 			
-		onBeforeAction: ->
-			@render "loading"
+			
+		action: ->
+			if @ready()
+				@render()
+			else
+				@render "loading"
+
 		onStop: ->
 			engine?.stop()
+			engine = null
 			
 Template.experimentName.events
 	"click h2": (event, template) ->

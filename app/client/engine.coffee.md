@@ -4,21 +4,51 @@
 		
 		constructor: () ->
 			@math = mathjs().parser()
+			# we use this dep to inform observers on changes
+			if Deps?.Dependency?
+				@dep = new Deps.Dependency
 
-			
-				
-		
 		init: (@experimentID)->
 		
 			@initExperiment()
 			@initScope()
 			@initFunctions()
+			#propagate initial scope
+			@dep?.changed()
+		
+		getScope: ->
+			@dep?.depend()
+			@math.scope
+				
 
-propagate initial scope
-
-			Session.set "currentScope", @math.scope
+		step: ->
+			for j in [1..4]
+				for object, i in @objects
+					
+					@math.scope.i = i+1
+					
+					for expression in @_compiledExpression
+						expression.eval @math.scope
+			#propagate change
+			@dep?.changed()
 			
 			
+				
+		play: ->
+			@running = !@running
+			
+			turn = =>
+				if @running
+					@step() 
+					_.defer turn
+			turn()
+
+		stop: ->
+			@running = false
+			
+
+
+
 		initExperiment: ->
 			experiment = Experiments.findOne _id: @experimentID
 			if experiment? and experiment.objectClass?
@@ -90,29 +120,7 @@ now we change the assign var (left of = )
 				
 
 
-		step: ->
-			for j in [1..4]
-				for object, i in @objects
-					
-					@math.scope.i = i+1
-					
-					for expression in @_compiledExpression
-						expression.eval @math.scope
-			
-			Session.set "currentScope", @math.scope
-			
-				
-		play: ->
-			@running = !@running
-			
-			turn = =>
-				if @running
-					@step() 
-					_.defer turn
-			turn()
-
-		stop: ->
-			@running = false
+		
 		
 
 	parseValue = (value, type) ->
