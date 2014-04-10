@@ -22,7 +22,7 @@
 				
 
 		step: ->
-			for j in [1..4]
+			for j in [1..1]
 				for object, i in @objects
 					
 					@math.scope.i = i+1

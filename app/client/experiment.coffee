@@ -17,9 +17,6 @@ Router.map ->
 				engine: engine
 			}
 
-		
-			
-			
 		action: ->
 			if @ready()
 				@render()
