@@ -86,10 +86,10 @@
 			@_compiledExpression = []
 			cursor.forEach (aFunction) => 
 				type = @types[aFunction.variable]
+				expr = aFunction?.expression
 				
-				
-				if type?
-					expr = aFunction.expression
+				if type? and expr?
+					
 
 we have every object in an array. The current object is always index i. 
 We therefore change the expressions slightly and add an index [i] to them
@@ -97,7 +97,7 @@ So if an object is a vector, we have a 2-dimensional matrix, the syntax is then 
 			
 
 first we change the expressions (right of = )
-
+					
 					for variable, objectType of @types
 						regex = new RegExp "\\b#{variable}\\b", "g"
 						switch objectType
