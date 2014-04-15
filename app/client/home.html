@@ -8,7 +8,7 @@
 </template>
 
 <template name="home_experiment_list">
-	<h2>all Experiments</h2>
+	<h2>All Experiments</h2>
 	<ul class="home_experiment_list">
 		{{#each experiments}}
 		<li><a href="{{pathFor 'experiment'}}">{{#if name}}{{name}}{{else}}{{_id}}{{/if}}</a></li>
