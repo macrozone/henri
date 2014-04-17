@@ -3,39 +3,44 @@
 	
 	
 	{{>experimentName}}
+
 	
-<div class="col-xs-6 col-sm-4">
-	{{>constantsEditor}}
+	<div class="col-xs-6 col-sm-4">
+		{{>constantsEditor}}
 	</div>
 	<div class="col-xs-6 col-sm-4">
-	{{>objectClassEditor}}
+		{{>objectClassEditor}}
 	</div>
 	<div class="col-xs-12 col-sm-6">
-	{{>objectEditor}}
+		{{>objectEditor}}
 	</div>
 	<div class="col-xs-12 col-sm-12">
-	{{>functions}}
+		{{>functions}}
 	</div>
 	
 
 
 	<div class="col-xs-12 col-sm-12">
-	{{>simplePlot}}
+		{{>simplePlot}}
 	</div>
+
+	<button class="btn btn-delete btn-warning">Delete Experiment</button>
+	<br />
+	<br />
 	
 
 </template>
 <template name="experimentName">
-<h2>{{experiment.name}}</h2>
-<input style="display: none;" class="input-lg form-control" type="text" value="{{experiment.name}}" />
+	<h2>{{experiment.name}}</h2>
+	<input style="display: none;" class="input-lg form-control" type="text" value="{{experiment.name}}" />
 
 </template>
 
 
 
 <template name="controls">
-<button class="btn btn-step">step</button>
-<button class="btn btn-play">play / pause</button>
+	<button class="btn btn-step">step</button>
+	<button class="btn btn-play">play / pause</button>
 
 </template>
 

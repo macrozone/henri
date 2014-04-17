@@ -42,6 +42,12 @@ Template.experimentName.events
 			name = "Sample Experiment (click to edit name)"
 		Experiments.update {_id:template.data.experiment._id}, $set: name: name
 
+Template.experiment.events
+	"click .btn-delete": (event, template)->
+		shouldDelete = confirm("Delete Experiment?")
+		if shouldDelete
+			Meteor.call "deleteExperiment", template.data.experimentID
+			Router.go "home"
 Template.functions.variables = ->
 	Experiments.findOne({_id: @experiment?._id})?.objectClass
 
