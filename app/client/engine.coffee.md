@@ -23,27 +23,38 @@
 
 		step: ->
 			for j in [1..1]
-				results = {}
-				for object, i in @objects
-					
-					@math.scope.i = i+1
-					@math.scope.t += @math.scope.dt
-					
-					for variable, expression of @_compiledExpression
-						result = expression.eval @math.scope
-						results[variable] = [] unless results[variable]?
-						results[variable][i] = result
-				# copy back and add change
-				for variable, result of results
-					@math.scope[variable] = @mathjs.add(@math.scope[variable], @mathjs.multiply(result, @math.scope.dt))
 
+				# this is the change-vector for all objects
+				changes = @calcChanges()
+				# multiply the change vector with the time step and write back to the scope
+				results = @eulerStep changes
+				for variable, result of results
+					@math.scope[variable] = result
+
+				@math.scope.t += @math.scope.dt
 
 					
 			#propagate change
 			@dep?.changed()
 			
-			
+		calcChanges: ->
+			results = {}
+			for object, i in @objects
 				
+				@math.scope.i = i+1
+				
+				
+				for variable, expression of @_compiledExpression
+					result = expression.eval @math.scope
+					results[variable] = [] unless results[variable]?
+					results[variable][i] = result
+			results
+				
+		eulerStep: (changes) ->
+			results = {}
+			for variable, result of changes
+				results[variable] = @mathjs.add(@math.scope[variable], @mathjs.multiply(result, @math.scope.dt))
+			results
 		play: ->
 			@running = !@running
 			
