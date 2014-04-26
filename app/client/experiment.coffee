@@ -111,7 +111,7 @@ Template.oneFunction.variable = ->
 	experiment = Experiments.findOne {_id: Session.get("experimentID")}
 	objectClass = experiment.objectClass
 
-	prepareExprForPretty @variable, objectClass
+	prepareExprForPretty "d/dt "+@variable, objectClass
 
 Template.oneFunction.function = ->
 

@@ -1,9 +1,9 @@
-
-
+	
 	@Engine = class
 		
 		constructor: () ->
-			@math = mathjs().parser()
+			@mathjs = mathjs()
+			@math = @mathjs.parser()
 			# we use this dep to inform observers on changes
 			if Deps?.Dependency?
 				@dep = new Deps.Dependency
@@ -23,12 +23,22 @@
 
 		step: ->
 			for j in [1..1]
+				results = {}
 				for object, i in @objects
 					
 					@math.scope.i = i+1
+					@math.scope.t += @math.scope.dt
 					
-					for expression in @_compiledExpression
-						expression.eval @math.scope
+					for variable, expression of @_compiledExpression
+						result = expression.eval @math.scope
+						results[variable] = [] unless results[variable]?
+						results[variable][i] = result
+				# copy back and add change
+				for variable, result of results
+					@math.scope[variable] = @mathjs.add(@math.scope[variable], @mathjs.multiply(result, @math.scope.dt))
+
+
+					
 			#propagate change
 			@dep?.changed()
 			
@@ -46,7 +56,8 @@
 		stop: ->
 			@running = false
 			
-
+		getClonedScope: ->
+			JSON.parse(JSON.stringify(@math.scope))
 
 
 		initExperiment: ->
@@ -60,7 +71,10 @@
 					if type? and variable? and type.length > 0 and variable.length > 0
 						@types[variable] = type
 		initScope: ->
-			@math.scope = {}
+			@math.scope = {
+				t: 0,
+				dt: 0.1
+			}
 			if @constants?
 				for constant in @constants
 					{type:type, variable: variable, value:valueString} = constant
@@ -83,12 +97,12 @@
 
 		initFunctions: ->
 			cursor = Functions.find {experimentID: @experimentID}, sort: execOrder: 1
-			@_compiledExpression = []
+			@_compiledExpression = {}
 			cursor.forEach (aFunction) => 
 				type = @types[aFunction.variable]
 				expr = aFunction?.expression
 				
-				if type? and expr?
+				if type? and expr? and expr.length > 0
 					
 
 we have every object in an array. The current object is always index i. 
@@ -103,18 +117,13 @@ first we change the expressions (right of = )
 						switch objectType
 							when "Scalar" then expr = expr.replace regex, "#{variable}[i]"
 							when "Vector" then expr = expr.replace regex, "#{variable}[i,:]"
+				
 
-now we change the assign var (left of = )						
-
-					switch type
-						when "Scalar" then variableForAssign = "#{aFunction.variable}[i]"
-						when "Vector" then variableForAssign = "#{aFunction.variable}[i,:]"
-					fullExpression = "#{variableForAssign} = #{expr}"
 					
-					console.log fullExpression
+			
 
 					try
-						@_compiledExpression.push @math.compile fullExpression
+						@_compiledExpression[aFunction.variable] = @math.compile expr
 					catch error
 						console.error error
 				
