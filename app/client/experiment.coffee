@@ -84,20 +84,7 @@ onFunctionChange = (event, template)->
 		doc = query
 		doc.expression = functionExpr
 		Functions.insert doc
-	
-onFunctionSortChange = (event, template)->
 
-	execOrder = parseInt $(event.target).val(),10
-	
-	query = {experimentID: Session.get("experimentID"), variable: @variable}
-	functionID = Functions.findOne(query)?._id
-
-	if functionID?
-		Functions.update {_id:functionID}, $set: execOrder: execOrder
-	else
-		doc = query
-		doc.execOrder = functionExpr
-		Functions.insert doc
 	
 
 		
@@ -129,8 +116,7 @@ Template.oneFunction.expressionForPretty = ->
 
 	
 Template.oneFunction.events
-	"keyup input.sort": onFunctionSortChange
-	"change input.sort": onFunctionSortChange
+	
 	"change input.function": onFunctionChange
 	"keyup input.function" : onFunctionChange
 	"change input.comment": onCommentChange

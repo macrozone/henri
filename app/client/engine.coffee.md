@@ -2,6 +2,10 @@
 	@Engine = class
 		
 		constructor: () ->
+			@drawInterval = 0.1
+
+
+			@calcMode = "rungekutta"
 			@mathjs = mathjs()
 			@math = @mathjs.parser()
 			# we use this dep to inform observers on changes
@@ -15,6 +19,7 @@
 			@initFunctions()
 			#propagate initial scope
 			@dep?.changed()
+			@tDrawn = 0
 		
 		getScope: ->
 			@dep?.depend()
@@ -22,38 +27,68 @@
 				
 
 		step: ->
-			for j in [1..1]
+			stepCounterBefore = Math.floor @math.scope.t / @drawInterval
+			while true
+				
+				switch @calcMode
+					when "rungekutta" then changes = @calcRungeKuttaChanges @math.scope
+					else changes = @calcEulerChanges @math.scope
+					
+				results = @eulerStep @math.scope, changes
 
-				# this is the change-vector for all objects
-				changes = @calcChanges()
-				# multiply the change vector with the time step and write back to the scope
-				results = @eulerStep changes
+				# write back results to scope
 				for variable, result of results
 					@math.scope[variable] = result
-
 				@math.scope.t += @math.scope.dt
 
-					
-			#propagate change
+				# break if enough steps are made
+				stepCounterAfter = Math.floor @math.scope.t / @drawInterval
+			
+				if stepCounterAfter > stepCounterBefore
+					break
+
+
+			#propagate change, this will redraw all plots
 			@dep?.changed()
 			
-		calcChanges: ->
+		calcEulerChanges: (scope)->
 			results = {}
 			for object, i in @objects
 				
-				@math.scope.i = i+1
+				scope.i = i+1
 				
 				
 				for variable, expression of @_compiledExpression
-					result = expression.eval @math.scope
+					result = expression.eval scope
 					results[variable] = [] unless results[variable]?
 					results[variable][i] = result
 			results
-				
-		eulerStep: (changes) ->
+		
+		calcRungeKuttaChanges: (scope) ->
+			currentScope = Tools.cloneObject scope
+			# this is the change-vector for all objects
+			changes_a = @calcEulerChanges currentScope
+			
+			# euler step
+			results_a = @eulerStep currentScope, changes_a
+
+			# again for runge kutta, write first changes to currentScope
+			for variable, result of results_a
+				currentScope[variable] = result
+
+			currentScope.t += currentScope.dt
+
+			# Runge Kutta
+			changes = {}
+			changes_b = @calcEulerChanges currentScope
+			for variable, change of changes_a
+				changes[variable] = @mathjs.divide(@mathjs.add(changes_a[variable], changes_b[variable]),2)
+			return changes
+
+		eulerStep: (scope, changes) ->
 			results = {}
 			for variable, result of changes
-				results[variable] = @mathjs.add(@math.scope[variable], @mathjs.multiply(result, @math.scope.dt))
+				results[variable] = @mathjs.add(scope[variable], @mathjs.multiply(result, scope.dt))
 			results
 		play: ->
 			@running = !@running
@@ -61,15 +96,13 @@
 			turn = =>
 				if @running
 					@step() 
-					_.defer turn
+					Meteor.defer turn
 			turn()
 
 		stop: ->
 			@running = false
 			
-		getClonedScope: ->
-			JSON.parse(JSON.stringify(@math.scope))
-
+		
 
 		initExperiment: ->
 			experiment = Experiments.findOne _id: @experimentID
@@ -107,7 +140,7 @@
 			
 
 		initFunctions: ->
-			cursor = Functions.find {experimentID: @experimentID}, sort: execOrder: 1
+			cursor = Functions.find {experimentID: @experimentID}
 			@_compiledExpression = {}
 			cursor.forEach (aFunction) => 
 				type = @types[aFunction.variable]

@@ -1,6 +1,6 @@
 
 # local
-maxPoints = 100
+shownTimeRange = 50
 variablesToPlot = ['x', 'v', 'a']
 
 math = mathjs()
@@ -37,9 +37,9 @@ Template.simplePlot.rendered = ->
 						if _.isArray value
 							# it is a vector, take its first dimension
 							value = value[0]
-							
-						shift = serie.data.length >= maxPoints
-						serie.addPoint value, false, shift, false
+					
+						shift = currentScope.t - serie.data[0]?.x > shownTimeRange
+						serie.addPoint [currentScope.t, value], false, shift, false
 		chart.redraw()
 
 Template.simplePlot.destroyed = ->
