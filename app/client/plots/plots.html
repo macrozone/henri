@@ -1,9 +1,16 @@
 <template name="plots">
+<div class="plots panel panel-default">
+ <div class="panel-heading">
+<h4 data-toggle="collapse" data-target=".plots .panel-body">Plots</h4>
+</div>
+<div class="panel-body collapse in">
 {{#each plots}}
 	{{>onePlot plot=this engine=../engine experimentID=../experimentID}}
 	{{/each}}
 
 	{{>addPlots}}
+	</div>
+	</div>
 </template>
 
 <template name="addPlots">
