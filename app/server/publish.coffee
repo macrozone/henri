@@ -9,10 +9,7 @@ duplicateDocumentByID = (collection, _id, overwriteValues = {}) ->
 
 duplicateDocument = (collection, doc, overwriteValues = {}) ->
 	delete doc._id
-	console.log doc
 	_.extend doc, overwriteValues
-	console.log doc
-	console.log "-------"
 	collection.insert doc
 
 duplicateMultipleDocuments = (collection, query, overwriteValues = {}) ->
