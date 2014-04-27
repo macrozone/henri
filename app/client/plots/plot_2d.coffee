@@ -19,13 +19,15 @@ clearCanvas = (canvas, context) ->
 
 drawPixel = (context, point) ->
 	[x,y] = point
-	id = context.createImageData(5, 5) # only do this once per page
-	d = id.data # only do this once per page
-	d[0] = 0
-	d[1] = 0
-	d[2] = 0
-	d[3] = 255
-	context.putImageData id, x+250, y+250 	
+	imgData = context.createImageData(5, 5) # only do this once per page
+	i = 0
+	while i < imgData.data.length
+		imgData.data[i + 0] = 100
+		imgData.data[i + 1] = 0
+		imgData.data[i + 2] = 0
+		imgData.data[i + 3] = 255
+		i += 4
+	context.putImageData imgData, x+250, y+250
 
 Template.plot_2d.rendered = ->
 	canvas = @find ".canvas"
