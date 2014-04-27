@@ -22,7 +22,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			@reset()	
 			
 		
-## getters
+## [reactive](http://docs.meteor.com/#reactivity)-getters
 
 		getScope: ->
 			@dataDep?.depend()
