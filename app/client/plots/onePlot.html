@@ -4,6 +4,11 @@
 
 <template name="onePlot">
 <div class="col-xs-12 col-sm-12">
+<div class="plots panel panel-default">
+ <div class="panel-heading">
+<h5>{{plot.type}}</h5>
+</div>
+<div class="panel-body">
 <div class="controls">
 {{>engineControls}}
 <button class="btn btn-delete btn-danger">Delete plot</button>	
@@ -16,6 +21,8 @@
       {{> ..}}         
     {{/with}}
   {{/with}}
+  	</div>
+  	</div>
   	</div>
 </template>
 

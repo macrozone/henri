@@ -55,11 +55,7 @@ Template.plot_2d.rendered = ->
 		chartDrawCompution?.stop()
 		chartOptionsCompution?.stop()
 
-Template.plot_x_t.events
-	"click .btn-clear": (event, template)->
-		#chart = template.$(".chartcontainer").highcharts()
-		#serie.setData [] for serie in chart.series
-		alert "not implemented"
+
 
 
 
