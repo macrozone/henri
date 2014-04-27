@@ -1,5 +1,5 @@
 
-
+shouldDrawGrid = true
 @addNewPlot_2 = (experimentID)->
 	Plots.insert 
 		experimentID: experimentID
@@ -16,6 +16,19 @@ clearCanvas = (canvas, context) ->
 
 	# Restore the transform
 	context.restore();
+
+drawGrid = (canvas, context) ->
+	
+	width = canvas.width
+	height = canvas.height
+	
+	context.beginPath();
+	context.moveTo(0, height/2)
+	context.lineTo(width, height/2)
+	context.moveTo(width/2, 0)
+	context.lineTo(width/2, height)
+	context.strokeStyle = "black"
+	context.stroke()
 
 drawPixel = (context, point) ->
 	[x,y] = point
@@ -52,6 +65,7 @@ Template.plot_x_t.events
 
 drawDataOnChart = (canvas, context, data)->
 	clearCanvas canvas, context
+	drawGrid(canvas, context)
 	{engine, plot} = data
 	
 	currentScope = engine.getScope()
