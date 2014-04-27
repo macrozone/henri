@@ -3,34 +3,42 @@
 
 
 <template name="onePlot">
-<div class="col-xs-12 col-sm-12">
-<div class="plots panel panel-default">
- <div class="panel-heading">
-<h5>{{plot.type}}</h5>
-</div>
-<div class="panel-body">
-<div class="controls">
-{{>engineControls}}
-<button class="btn btn-delete btn-danger"><span class="glyphicon glyphicon-remove"></span> Delete plot</button>	
-</div>
+	<div class="col-xs-12 col-sm-12">
+		<div class="plots panel panel-default">
+			<div class="panel-heading">
+				<h5>{{plot.type}}</h5>
+			</div>
+			<div class="panel-body">
+				<div class="controls">
+					{{>engineControls}}
+					<button class="btn btn-delete btn-danger">
+						<span class="glyphicon glyphicon-remove"></span> Delete plot
+					</button>	
+				</div>
 
 
-  {{#with chooseTemplate plot.type}}
+				{{#with chooseTemplate plot.type}}
 
-    {{#with ..}}
-      {{> ..}}         
-    {{/with}}
-  {{/with}}
-  	</div>
-  	</div>
-  	</div>
+				{{#with ..}}
+				{{> ..}}         
+				{{/with}}
+				{{/with}}
+			</div>
+		</div>
+	</div>
 </template>
 
 <template name="engineControls">
-	<button class="btn btn-info btn-step"><span class="glyphicon glyphicon-step-forward"></span> step</button>
-	<button class="btn btn-primary btn-play"><span class="glyphicon {{playIcon}}"></span> {{playLabel}}</button>
-
-<button class="btn btn-reset btn-warning"><span class="glyphicon glyphicon-fast-backward"></span> Reset Experiment</button>
+	
+	<button class="btn btn-primary btn-play">
+		<span class="glyphicon {{playIcon}}"></span> {{playLabel}}
+	</button>
+	<button class="btn btn-info btn-step">
+		<span class="glyphicon glyphicon-step-forward"></span> step
+	</button>
+	<button class="btn btn-reset btn-warning">
+		<span class="glyphicon glyphicon-fast-backward"></span> Reset Experiment
+	</button>
 
 
 </template>
