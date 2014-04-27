@@ -151,7 +151,7 @@
 				if type? and expr? and expr.length > 0
 					regex = new RegExp "\\|([^\\|]+)\\|", "g"
 					expr = expr.replace regex, "norm($1)"
-					console.log expr
+					
 
 we have every object in an array. The current object is always index i. 
 We therefore change the expressions slightly and add an index [i] to them
