@@ -20,6 +20,8 @@ Template.engineControls.playIcon = ->
 		"glyphicon-pause"
 	else
 		"glyphicon-play"
+Template.engineControls.time = ->
+	@engine?.getScope().t.toPrecision 5
 Template.engineControls.events
 	"click .btn-step": (event, template) ->
 		template.data?.engine?.stop()
