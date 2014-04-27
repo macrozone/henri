@@ -4,16 +4,17 @@
 
 <template name="onePlot">
 	<div class="col-xs-12 col-sm-12">
-		<div class="plots panel panel-default">
+		<div class="onePlot panel panel-default">
 			<div class="panel-heading">
 				<h5>{{plot.type}}</h5>
+				<button class="btn btn-delete btn-danger">
+						<span class="glyphicon glyphicon-remove"></span> Delete plot
+					</button>	
 			</div>
 			<div class="panel-body">
 				<div class="controls">
 					{{>engineControls}}
-					<button class="btn btn-delete btn-danger">
-						<span class="glyphicon glyphicon-remove"></span> Delete plot
-					</button>	
+					
 				</div>
 
 
@@ -29,7 +30,9 @@
 </template>
 
 <template name="engineControls">
+<div class="engineControls">
 <p class="time">t = {{time}}</p>
+<div class="buttons">
 	<button class="btn btn-primary btn-play">
 		<span class="glyphicon {{playIcon}}"></span> {{playLabel}}
 	</button>
@@ -39,7 +42,8 @@
 	<button class="btn btn-reset btn-warning">
 		<span class="glyphicon glyphicon-fast-backward"></span> Reset Experiment
 	</button>
-
-
+</div>
+<div class="clear"></div>
+</div>
 
 </template>
