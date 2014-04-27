@@ -19,16 +19,16 @@
 	</div>
 	
 
+	{{>plots}}
 
-	<div class="col-xs-12 col-sm-12">
-		{{>simplePlot}}
-	</div>
-
-	<button class="btn btn-delete btn-warning"><span class="glyphicon glyphicon-warning-sign"></span> Delete Experiment</button>
+	{{>experimentControls}}
 	<br />
 	<br />
 	
 
+</template>
+<template name="experimentControls">
+<button class="btn btn-delete btn-warning"><span class="glyphicon glyphicon-warning-sign"></span> Delete Experiment</button>
 </template>
 <template name="experimentName">
 	<h2>{{experiment.name}}</h2>
@@ -38,10 +38,6 @@
 
 
 
-<template name="controls">
-	<button class="btn btn-step">step</button>
-	<button class="btn btn-play">play / pause</button>
 
-</template>
 
 

@@ -1,0 +1,25 @@
+
+
+
+
+<template name="onePlot">
+<div class="col-xs-12 col-sm-12">
+{{>engineControls}}
+<button class="btn btn-delete btn-danger">Delete plot</button>	
+
+
+  {{#with chooseTemplate plot.type}}
+
+    {{#with ..}}
+      {{> ..}}         
+    {{/with}}
+  {{/with}}
+  	</div>
+</template>
+
+<template name="engineControls">
+	<button class="btn btn-step">step</button>
+	<button class="btn btn-play">play / pause</button>
+
+
+</template>

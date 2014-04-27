@@ -3,7 +3,7 @@
 		
 		constructor: () ->
 			@drawInterval = 0.1
-
+			console.log "init engine"
 
 			@calcMode = "rungekutta"
 			@mathjs = mathjs()

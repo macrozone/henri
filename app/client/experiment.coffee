@@ -42,7 +42,7 @@ Template.experimentName.events
 			name = "Sample Experiment (click to edit name)"
 		Experiments.update {_id:template.data.experiment._id}, $set: name: name
 
-Template.experiment.events
+Template.experimentControls.events
 	"click .btn-delete": (event, template)->
 		shouldDelete = confirm("Delete Experiment?")
 		if shouldDelete
@@ -58,6 +58,7 @@ prepareExprForPretty = (expr, objectClass) ->
 			regex = new RegExp "\\b#{variable.variable}(_i)?\\b", "g"
 			expr = expr.replace regex, "vec #{variable.variable}$1"
 	return '`'+expr+'`'
+
 
 
 onCommentChange = (event, template)->
@@ -122,10 +123,6 @@ Template.oneFunction.events
 	"change input.comment": onCommentChange
 	"keyup input.comment" : onCommentChange
 
-Template.controls.events
-	"click .btn-step": (event, template) ->
-		template.data?.engine?.step()
-	"click .btn-play": (event, template) ->
-		template.data?.engine?.play()
+
 
 		

@@ -1,0 +1,17 @@
+<template name="plots">
+{{#each plots}}
+	{{>onePlot plot=this engine=../engine experimentID=../experimentID}}
+	{{/each}}
+
+	{{>addPlots}}
+</template>
+
+<template name="addPlots">
+<div class="col-xs-12 col-sm-12">
+<button class="btn btn-add-x_t">
+Add new x_t Plot
+</button>
+</div>
+
+</template>
+
