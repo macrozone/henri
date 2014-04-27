@@ -1,5 +1,5 @@
 <template name="experiment">
-
+	{{setTitle experiment.name " - Henri" }}
 	
 	
 	{{>experimentName}}
@@ -19,28 +19,29 @@
 </template>
 
 <template name="experimentEditor">
-<div class="experimentEditor panel panel-default">
- <div class="panel-heading">
-<h4 data-toggle="collapse" data-target=".experimentEditor .panel-body">Edit Experiment</h4>
-</div>
-<div class="panel-body collapse in">
-<div class="col-xs-6 col-sm-3">
-		{{>constantsEditor}}
-	</div>
-	<div class="col-xs-6 col-sm-3">
-		{{>objectClassEditor}}
-	</div>
-	<div class="col-xs-12 col-sm-6">
-		{{>objectEditor}}
-	</div>
-	<div class="col-xs-12 col-sm-12">
-		{{>functions}}
-	</div>
-	</div>
+	<div class="experimentEditor panel panel-default">
+		<div class="panel-heading">
+			<h4 data-toggle="collapse" data-target=".experimentEditor .panel-body">Edit Experiment</h4>
+		</div>
+		<div class="panel-body collapse in">
+			<div class="col-xs-6 col-sm-3">
+				{{>constantsEditor}}
+			</div>
+			<div class="col-xs-6 col-sm-3">
+				{{>objectClassEditor}}
+			</div>
+			<div class="col-xs-12 col-sm-6">
+				{{>objectEditor}}
+			</div>
+			<div class="col-xs-12 col-sm-12">
+				{{>functions}}
+			</div>
+		</div>
 	</div>
 </template>
 <template name="experimentControls">
-<button class="btn btn-delete btn-warning"><span class="glyphicon glyphicon-warning-sign"></span> Delete Experiment</button>
+	<button class="btn btn-delete btn-warning"><span class="glyphicon glyphicon-warning-sign"></span> Delete Experiment</button>
+	<button class="btn btn-duplicate btn-warning"><span class="glyphicon glyphicon-retweet"></span> Duplicate Experiment</button>
 </template>
 <template name="experimentName">
 	<h2>{{experiment.name}}</h2>

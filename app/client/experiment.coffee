@@ -48,6 +48,12 @@ Template.experimentControls.events
 		if shouldDelete
 			Meteor.call "deleteExperiment", template.data.experimentID
 			Router.go "home"
+	"click .btn-duplicate": (event, template) ->
+		Meteor.call "duplicateExperiment", template.data.experimentID, (error, newID) ->
+			if newID?
+				Router.go "experiment", _id: newID
+				window.scrollTo 0, 0
+
 Template.functions.variables = ->
 	Experiments.findOne({_id: @experiment?._id})?.objectClass
 
