@@ -1,9 +1,14 @@
-	
+# Engine
+
+The engine is the hearth of Henri, it uses [mathjs](mathjs.org) internally.
+The current data of the calculation can be accessed with engine.getScope() (scope is a terminus from mathjs)
+The engine is a [reactive Meteor-Datasource](http://docs.meteor.com/#reactivity),
+so if you access getScope in a reactive context, it will be re-run, if the data changes here
+
 	@Engine = class
 		
 		constructor: () ->
 			@drawInterval = 0.1
-			console.log "init engine"
 
 			@calcMode = "rungekutta"
 			@mathjs = mathjs()
@@ -22,7 +27,6 @@
 			@initFunctions()
 			#propagate initial scope
 			@dataDep?.changed()
-			
 		
 		getScope: ->
 			@dataDep?.depend()
@@ -35,7 +39,6 @@
 		step: ->
 			stepCounterBefore = Math.floor @math.scope.t / @drawInterval
 			while true
-				
 				switch @calcMode
 					when "rungekutta" then changes = @calcRungeKuttaChanges @math.scope
 					else changes = @calcEulerChanges @math.scope
@@ -50,20 +53,15 @@
 				# break if enough steps are made
 				stepCounterAfter = Math.floor @math.scope.t / @drawInterval
 			
-				if stepCounterAfter > stepCounterBefore
-					break
-
-
+				break if stepCounterAfter > stepCounterBefore
+					
 			#propagate change, this will redraw all plots
 			@dataDep?.changed()
 			
 		calcEulerChanges: (scope)->
 			results = {}
 			for object, i in @objects
-				
-				scope.i = i+1
-				
-				
+				scope.i = i+1 # mathjs indices begin with 1
 				for variable, expression of @_compiledExpression
 					result = expression.eval scope
 					results[variable] = [] unless results[variable]?
@@ -72,20 +70,27 @@
 		
 		calcRungeKuttaChanges: (scope) ->
 			currentScope = Tools.cloneObject scope
-			# this is the change-vector for all objects
+
+this is the change-vector for all objects at time t
+
 			changes_a = @calcEulerChanges currentScope
 			
-			# euler step
+now we do an euler step a
+
 			results_a = @eulerStep currentScope, changes_a
 
-			# again for runge kutta, write first changes to currentScope
+for [runge kutta](http://de.wikipedia.org/wiki/Runge-Kutta-Verfahren), we calculate a second change-vector, 
+this time after one step dt
+write first results_a to currentScope, so currentScope is now the state after changes_a
+then, calculate a new change-vector changes_b from this point 
+			
+			currentScope.t += currentScope.dt
 			for variable, result of results_a
 				currentScope[variable] = result
-
-			currentScope.t += currentScope.dt
-
-			# Runge Kutta
 			changes_b = @calcEulerChanges currentScope
+			
+now we calculate (changes_a + changes_b) / 2 and perform an euler-step with this vector
+
 			changes = {}
 			for variable, change of changes_a
 				changes[variable] = @mathjs.divide(@mathjs.add(changes_a[variable], changes_b[variable]),2)
@@ -96,6 +101,7 @@
 			for variable, result of changes
 				results[variable] = @mathjs.add(scope[variable], @mathjs.multiply(result, scope.dt))
 			results
+
 		play: ->
 			@running = !@running
 			@stateDep.changed()
@@ -132,13 +138,10 @@
 						@math.scope[variable] = value
 			if @objects?
 				for anObject in @objects
-
 					for variable, valueString of anObject
 						type = @types[variable]
 						if variable? and variable.length > 0 and valueString? and type?
-
 							@math.scope[variable] = [] unless @math.scope[variable]?
-							
 							@math.scope[variable].push parseValue valueString, type
 						
 		
@@ -166,20 +169,13 @@ So if an object is a vector, we have a 2-dimensional matrix, the syntax is then 
 						switch objectType
 							when "Scalar" then expr = expr.replace regex, "#{variable}[i]"
 							when "Vector" then expr = expr.replace regex, "#{variable}[i,:]"
-				
-
-					
-			
 
 					try
 						@_compiledExpression[aFunction.variable] = @math.compile expr
 					catch error
 						console.error error
-				
 
-
-		
-		
+some static helpers:
 
 	parseValue = (value, type) ->
 		switch type
