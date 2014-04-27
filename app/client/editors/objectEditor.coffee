@@ -6,6 +6,13 @@ vectorValidator = (value, callback) ->
 
 	callback false unless parts.length == DIMENSION
 	callback _.every parts, _.isNumber
+
+sanitize = (data) ->
+	_.filter data, (anObject) ->
+		for key, value of anObject
+			return false unless value?
+			return false if _.isString(value) and value.length == 0
+		return true
 Template.objectEditor.rendered = ->
 	$table = $(@find ".table")
 	Deps.autorun =>
@@ -50,9 +57,11 @@ Template.objectEditor.rendered = ->
 					minRows: data.length
 					columns: columns
 					colHeaders: colHeaders
-					afterChange: () ->
+					afterChange: ->
 						if Session.get("experimentID") == experimentID
-							Experiments.update {_id: experimentID}, {$set: objects: @getData()}
+
+							data = sanitize @getData()
+							Experiments.update {_id: experimentID}, {$set: objects: data}
 				
 
 
