@@ -2,7 +2,7 @@
 
 Template.objectClassEditor.rendered = ->
 	$table = $(@find ".table")
-	Deps.autorun =>
+	calculation = Deps.autorun =>
 		experiment = Experiments.findOne _id: Session.get("experimentID")
 		
 		if experiment? and $table.length > 0
@@ -27,9 +27,11 @@ Template.objectClassEditor.rendered = ->
 							source: ["Vector", "Scalar"]
 						}
 					]
-					afterChange: () ->
-						if Session.get("experimentID") == experimentID
-							Experiments.update {_id: experimentID}, {$set: "objectClass": @getData()}
+					afterChange: (change, source) ->
+						unless source == "loadData"
+							Experiments.update {_id: Session.get("experimentID")}, {$set: "objectClass": @getData()}
 
 					
 
+	Template.objectClassEditor.destroyed = ->
+		calculation?.stop()	

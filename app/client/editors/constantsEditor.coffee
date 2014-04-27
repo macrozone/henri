@@ -3,7 +3,7 @@
 Template.constantsEditor.rendered = ->
 	$table = $(@find ".table")
 
-	Deps.autorun =>
+	calculation = Deps.autorun =>
 		experiment = Experiments.findOne _id: Session.get("experimentID")
 		
 		if experiment? and $table.length > 0
@@ -32,9 +32,11 @@ Template.constantsEditor.rendered = ->
 						}
 
 					]
-					afterChange: () ->
-						if Session.get("experimentID") == experimentID
-							Experiments.update {_id: experimentID}, {$set: "constants": @getData()}
+					afterChange: (change, source) ->
+						unless source == "loadData"
+							Experiments.update {_id: Session.get("experimentID")}, {$set: "constants": @getData()}
 
 					
 
+	Template.constantsEditor.destroyed = ->
+		calculation?.stop()			

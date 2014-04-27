@@ -14,10 +14,11 @@ sanitize = (data) ->
 			return false if _.isString(value) and value.length == 0
 		return true
 Template.objectEditor.rendered = ->
+
 	$table = $(@find ".table")
-	Deps.autorun =>
+	calculation = Deps.autorun =>
 		experiment = Experiments.findOne _id: Session.get("experimentID")
-		
+	
 		if experiment? and $table.length > 0
 			experimentID = experiment._id
 			data = experiment.objects
@@ -45,6 +46,7 @@ Template.objectEditor.rendered = ->
 
 			handsontable = $table.handsontable "getInstance"
 			if handsontable?
+				console.log "handsontabel update"
 				handsontable.updateSettings 
 					columns: columns
 					colHeaders: colHeaders
@@ -57,11 +59,11 @@ Template.objectEditor.rendered = ->
 					minRows: data.length
 					columns: columns
 					colHeaders: colHeaders
-					afterChange: ->
-						if Session.get("experimentID") == experimentID
-
+					afterChange: (change, source) ->
+						console.log change, source
+						unless source == "loadData"
 							data = sanitize @getData()
-							Experiments.update {_id: experimentID}, {$set: objects: data}
-				
-
-
+							Experiments.update {_id: Session.get("experimentID")}, {$set: objects: data}
+							console.log Experiments.findOne _id: Session.get("experimentID")
+	Template.objectEditor.destroyed = ->
+		calculation?.stop()
