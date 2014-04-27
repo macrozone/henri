@@ -10,8 +10,19 @@ Template.onePlot.events
 		if shouldDelete
 			Plots.remove _id: template.data.plot._id
 
+Template.engineControls.playLabel = ->
+	if @engine?.isRunning()
+		"Pause"
+	else
+		"Play"
+Template.engineControls.playIcon = ->
+	if @engine?.isRunning()
+		"glyphicon-pause"
+	else
+		"glyphicon-play"
 Template.engineControls.events
 	"click .btn-step": (event, template) ->
+		template.data?.engine?.stop()
 		template.data?.engine?.step()
 	"click .btn-play": (event, template) ->
 		template.data?.engine?.play()

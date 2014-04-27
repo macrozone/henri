@@ -10,7 +10,8 @@
 			@math = @mathjs.parser()
 			# we use this dep to inform observers on changes
 			if Deps?.Dependency?
-				@dep = new Deps.Dependency
+				@dataDep = new Deps.Dependency
+				@stateDep = new Deps.Dependency
 
 		init: (@experimentID)->
 			@reset()	
@@ -20,13 +21,16 @@
 			@initScope()
 			@initFunctions()
 			#propagate initial scope
-			@dep?.changed()
+			@dataDep?.changed()
 			
 		
 		getScope: ->
-			@dep?.depend()
+			@dataDep?.depend()
 			@math.scope
-				
+	
+		isRunning: ->
+			@stateDep?.depend()
+			@running
 
 		step: ->
 			stepCounterBefore = Math.floor @math.scope.t / @drawInterval
@@ -51,7 +55,7 @@
 
 
 			#propagate change, this will redraw all plots
-			@dep?.changed()
+			@dataDep?.changed()
 			
 		calcEulerChanges: (scope)->
 			results = {}
@@ -94,7 +98,7 @@
 			results
 		play: ->
 			@running = !@running
-			
+			@stateDep.changed()
 			turn = =>
 				if @running
 					@step() 
@@ -103,8 +107,7 @@
 
 		stop: ->
 			@running = false
-			
-		
+			@stateDep.changed()
 
 		initExperiment: ->
 			experiment = Experiments.findOne _id: @experimentID
