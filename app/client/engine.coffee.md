@@ -149,14 +149,14 @@
 				expr = aFunction?.expression
 				
 				if type? and expr? and expr.length > 0
-					
+					regex = new RegExp "\\|([^\\|]+)\\|", "g"
+					expr = expr.replace regex, "norm($1)"
+					console.log expr
 
 we have every object in an array. The current object is always index i. 
 We therefore change the expressions slightly and add an index [i] to them
 So if an object is a vector, we have a 2-dimensional matrix, the syntax is then with [i,:]
-			
 
-first we change the expressions (right of = )
 					
 					for variable, objectType of @types
 						regex = new RegExp "\\b#{variable}\\b", "g"
@@ -181,7 +181,7 @@ first we change the expressions (right of = )
 	parseValue = (value, type) ->
 		switch type
 			when 'Scalar' then parseFloat value
-			when 'Vector' then _(value.split ",").map parseFloat
+			when 'Vector' then _(value?.split? ",").map parseFloat
 			else parseFloat value
 
 	isValidObject = (object) ->
