@@ -5,6 +5,7 @@ shouldDrawGrid = true
 		experimentID: experimentID
 		type: "2d"
 		variablesToPlot:['x']
+
 	
 
 clearCanvas = (canvas, context) ->
@@ -22,30 +23,35 @@ drawGrid = (canvas, context) ->
 	width = canvas.width
 	height = canvas.height
 	
-	context.beginPath()
+	context.beginPath();
 	context.moveTo(0, height/2)
 	context.lineTo(width, height/2)
 	context.moveTo(width/2, 0)
 	context.lineTo(width/2, height)
-
-	context.font = "20px Verdana"
-	context.fillText "x", width-15, height/2-10
-	context.fillText "y", width/2+10, 15
-
-	for i in [1..9]
-		context.moveTo(width/10*i, height/2-5)
-		context.lineTo(width/10*i, height/2+5)
-		context.moveTo(width/2-5, height/10*i)
-		context.lineTo(width/2+5, height/10*i)
-
 	context.strokeStyle = "black"
 	context.stroke()
 
 drawPixel = (context, point) ->
 	[x,y] = point
 	context.beginPath();
-	context.arc 250+x,250+y*-1, 5, 0, 2*Math.PI
+	context.arc 250+x,250-y, 5, 0, 2*Math.PI
 	context.fill()
+
+drawArrow = (context, fromx, fromy, tox, toy) ->
+	fromx += 250
+	fromy = 250 - fromy
+	tox += 250
+	toy = 250 - toy
+	headlen = 8 # length of head in pixels
+	angle = Math.atan2(toy - fromy, tox - fromx)
+	context.beginPath()
+	context.moveTo fromx, fromy
+	context.lineTo tox, toy
+	context.lineTo tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6)
+	context.moveTo tox, toy
+	context.lineTo tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6)
+	context.strokeStyle = "red"
+	context.stroke()
 
 Template.plot_2d.rendered = ->
 	canvas = @find ".canvas"
@@ -68,23 +74,47 @@ Template.plot_2d.rendered = ->
 
 
 
+getPointFromValue = (value) ->
+	if _.isArray value
+		# it is a vector, take its first two dimension
+		[value[0], value[1]]
+	else
+		[value, 0]
+drawValueAsPixel = (context, value) ->
+	point = getPointFromValue value
+	drawPixel context, point
 
+drawValueAsVector = (context, anchorPoint, value) ->
+	point = getPointFromValue value
+	endPoint = [anchorPoint[0] + point[0], anchorPoint[1] + point[1]]
+	drawArrow context, anchorPoint[0], anchorPoint[1], endPoint[0], endPoint[1]
 
 drawDataOnChart = (canvas, context, data)->
 	clearCanvas canvas, context
 	drawGrid(canvas, context)
 	{engine, plot} = data
 	
+	# will be changed:
+	vectorsToPlot =
+		x: ["_d_v"]
+
 	currentScope = engine.getScope()
 	for variable in plot.variablesToPlot
 		if currentScope?[variable]?
 			if _.isArray currentScope[variable]
 				for value, index in currentScope[variable]
-					if _.isArray value
-						# it is a vector, take its first two dimension
-						point  = [value[0], value[1]]
-					else
-						point = [value, 0]
-					drawPixel context, point
+					drawValueAsPixel context, value
+
+					# draw vectors too
+
+					if vectorsToPlot[variable]?
+						for vectorVariable in vectorsToPlot[variable]
+							if currentScope[vectorVariable]?[index]?
+								drawValueAsVector context, getPointFromValue(value), currentScope[vectorVariable]?[index]
+					
+					
+				
+						
+
 					
 

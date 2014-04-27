@@ -61,7 +61,8 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 				switch @calcMode
 					when "rungekutta" then changes = @calcRungeKuttaChanges @math.scope
 					else changes = @calcEulerChanges @math.scope
-					
+				
+
 				results = @eulerStep @math.scope, changes
 
 				# write back results to scope
@@ -74,7 +75,10 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			
 				break if stepCounterAfter > stepCounterBefore
 					
-			#propagate change, this will redraw all plots
+			# propagate change, this will redraw all plots
+			# we will also add the changes to the scope, so we can plot them
+			@addChangeVectorToScope changes
+
 			@dataDep?.changed()
 
 ## Euler
@@ -91,10 +95,13 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 		eulerStep: (scope, changes) ->
 			results = {}
-			for variable, result of changes
-				results[variable] = @mathjs.add(scope[variable], @mathjs.multiply(result, scope.dt))
+			for variable, value of changes
+				results[variable] = @mathjs.add(scope[variable], @mathjs.multiply(value, scope.dt))
 			results
 
+		addChangeVectorToScope: (changes) ->
+			for variable, value of changes
+				@math.scope[Tools.getDiffVariableName variable] = value
 
 ## [Runge-Kutta](http://de.wikipedia.org/wiki/Runge-Kutta-Verfahren)
 
