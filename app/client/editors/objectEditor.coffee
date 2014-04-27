@@ -46,7 +46,6 @@ Template.objectEditor.rendered = ->
 
 			handsontable = $table.handsontable "getInstance"
 			if handsontable?
-				console.log "handsontabel update"
 				handsontable.updateSettings 
 					columns: columns
 					colHeaders: colHeaders
@@ -60,10 +59,8 @@ Template.objectEditor.rendered = ->
 					columns: columns
 					colHeaders: colHeaders
 					afterChange: (change, source) ->
-						console.log change, source
 						unless source == "loadData"
 							data = sanitize @getData()
 							Experiments.update {_id: Session.get("experimentID")}, {$set: objects: data}
-							console.log Experiments.findOne _id: Session.get("experimentID")
 	Template.objectEditor.destroyed = ->
 		calculation?.stop()
