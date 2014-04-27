@@ -13,13 +13,15 @@
 				@dep = new Deps.Dependency
 
 		init: (@experimentID)->
-		
+			@reset()	
+			
+		reset: ->
 			@initExperiment()
 			@initScope()
 			@initFunctions()
 			#propagate initial scope
 			@dep?.changed()
-			@tDrawn = 0
+			
 		
 		getScope: ->
 			@dep?.depend()
@@ -79,8 +81,8 @@
 			currentScope.t += currentScope.dt
 
 			# Runge Kutta
-			changes = {}
 			changes_b = @calcEulerChanges currentScope
+			changes = {}
 			for variable, change of changes_a
 				changes[variable] = @mathjs.divide(@mathjs.add(changes_a[variable], changes_b[variable]),2)
 			return changes

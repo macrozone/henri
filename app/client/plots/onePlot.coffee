@@ -15,3 +15,5 @@ Template.engineControls.events
 		template.data?.engine?.step()
 	"click .btn-play": (event, template) ->
 		template.data?.engine?.play()
+	"click .btn-reset": (event, template) ->
+		template.data?.engine?.reset()
