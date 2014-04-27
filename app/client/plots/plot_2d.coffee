@@ -22,11 +22,22 @@ drawGrid = (canvas, context) ->
 	width = canvas.width
 	height = canvas.height
 	
-	context.beginPath();
+	context.beginPath()
 	context.moveTo(0, height/2)
 	context.lineTo(width, height/2)
 	context.moveTo(width/2, 0)
 	context.lineTo(width/2, height)
+
+	context.font = "20px Verdana"
+	context.fillText "x", width-15, height/2-10
+	context.fillText "y", width/2+10, 15
+
+	for i in [1..9]
+		context.moveTo(width/10*i, height/2-5)
+		context.lineTo(width/10*i, height/2+5)
+		context.moveTo(width/2-5, height/10*i)
+		context.lineTo(width/2+5, height/10*i)
+
 	context.strokeStyle = "black"
 	context.stroke()
 
