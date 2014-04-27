@@ -21,13 +21,9 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 		init: (@experimentID)->
 			@reset()	
 			
-		reset: ->
-			@initExperiment()
-			@initScope()
-			@initFunctions()
-			#propagate initial scope
-			@dataDep?.changed()
 		
+## getters
+
 		getScope: ->
 			@dataDep?.depend()
 			@math.scope
@@ -35,6 +31,29 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 		isRunning: ->
 			@stateDep?.depend()
 			@running
+
+## controls
+
+		play: ->
+			@running = !@running
+			@stateDep.changed()
+			turn = =>
+				if @running
+					@step() 
+					Meteor.defer turn
+			turn()
+
+		stop: ->
+			@running = false
+			@stateDep.changed()
+
+		reset: ->
+			@initExperiment()
+			@initScope()
+			@initFunctions()
+			#propagate initial scope
+			@dataDep?.changed()
+
 
 		step: ->
 			stepCounterBefore = Math.floor @math.scope.t / @drawInterval
@@ -57,7 +76,9 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 					
 			#propagate change, this will redraw all plots
 			@dataDep?.changed()
-			
+
+## Euler
+
 		calcEulerChanges: (scope)->
 			results = {}
 			for object, i in @objects
@@ -67,7 +88,16 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 					results[variable] = [] unless results[variable]?
 					results[variable][i] = result
 			results
-		
+
+		eulerStep: (scope, changes) ->
+			results = {}
+			for variable, result of changes
+				results[variable] = @mathjs.add(scope[variable], @mathjs.multiply(result, scope.dt))
+			results
+
+
+## [Runge-Kutta](http://de.wikipedia.org/wiki/Runge-Kutta-Verfahren)
+
 		calcRungeKuttaChanges: (scope) ->
 			currentScope = Tools.cloneObject scope
 
@@ -89,37 +119,21 @@ then, calculate a new change-vector changes_b from this point
 				currentScope[variable] = result
 			changes_b = @calcEulerChanges currentScope
 			
-now we calculate (changes_a + changes_b) / 2 and perform an euler-step with this vector
+now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x = x + changes * dt) later
 
 			changes = {}
 			for variable, change of changes_a
 				changes[variable] = @mathjs.divide(@mathjs.add(changes_a[variable], changes_b[variable]),2)
 			return changes
 
-		eulerStep: (scope, changes) ->
-			results = {}
-			for variable, result of changes
-				results[variable] = @mathjs.add(scope[variable], @mathjs.multiply(result, scope.dt))
-			results
 
-		play: ->
-			@running = !@running
-			@stateDep.changed()
-			turn = =>
-				if @running
-					@step() 
-					Meteor.defer turn
-			turn()
-
-		stop: ->
-			@running = false
-			@stateDep.changed()
+## initialisation
 
 		initExperiment: ->
 			experiment = Experiments.findOne _id: @experimentID
 			if experiment? and experiment.objectClass?
 				@constants = experiment.constants
-				@objects = _.filter experiment.objects, isValidObject
+				@objects = _.filter experiment.objects, _isValidObject
 				@types = {}
 				for oneVar in experiment.objectClass
 					{type:type, variable: variable} = oneVar
@@ -134,7 +148,7 @@ now we calculate (changes_a + changes_b) / 2 and perform an euler-step with this
 				for constant in @constants
 					{type:type, variable: variable, value:valueString} = constant
 					if type? and valueString? and variable?
-						value = parseValue valueString, type
+						value = _parseValue valueString, type
 						@math.scope[variable] = value
 			if @objects?
 				for anObject in @objects
@@ -142,7 +156,7 @@ now we calculate (changes_a + changes_b) / 2 and perform an euler-step with this
 						type = @types[variable]
 						if variable? and variable.length > 0 and valueString? and type?
 							@math.scope[variable] = [] unless @math.scope[variable]?
-							@math.scope[variable].push parseValue valueString, type
+							@math.scope[variable].push _parseValue valueString, type
 						
 		
 			
@@ -175,15 +189,15 @@ So if an object is a vector, we have a 2-dimensional matrix, the syntax is then 
 					catch error
 						console.error error
 
-some static helpers:
+## Static helpers, may be removed
 
-	parseValue = (value, type) ->
+	_parseValue = (value, type) ->
 		switch type
 			when 'Scalar' then parseFloat value
 			when 'Vector' then _(value?.split? ",").map parseFloat
 			else parseFloat value
 
-	isValidObject = (object) ->
+	_isValidObject = (object) ->
 		return false if _(object).isEmpty()
 		for variable, value of object
 			return false unless value?
