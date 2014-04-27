@@ -52,11 +52,17 @@ Template.functions.variables = ->
 	Experiments.findOne({_id: @experiment?._id})?.objectClass
 
 
-prepareExprForPretty = (expr, objectClass) ->
-	for variable in objectClass
+prepareExprForPretty = (expr, experiment) ->
+	{objectClass, constants} = experiment
+
+	prepareOneVar = (variable) ->
 		if variable.variable? and variable.variable.length > 0 and variable.type == "Vector"
 			regex = new RegExp "\\b#{variable.variable}(_i)?\\b", "g"
-			expr = expr.replace regex, "vec #{variable.variable}$1"
+			expr = expr.replace regex, "vec(#{variable.variable}$1)"
+
+	prepareOneVar variable for variable in objectClass
+	prepareOneVar variable for variable in constants
+		
 	return '`'+expr+'`'
 
 
@@ -97,9 +103,8 @@ Template.oneFunction.rendered = ->
 
 Template.oneFunction.variable = ->
 	experiment = Experiments.findOne {_id: Session.get("experimentID")}
-	objectClass = experiment.objectClass
 
-	prepareExprForPretty "d/dt "+@variable, objectClass
+	prepareExprForPretty "d/dt "+@variable, experiment
 
 Template.oneFunction.function = ->
 
@@ -111,9 +116,10 @@ Template.oneFunction.expressionForPretty = ->
 	expression = Functions.findOne({experimentID: Session.get("experimentID"), variable: @variable})?.expression
 	if expression?
 		experiment = Experiments.findOne {_id: Session.get("experimentID")}
-		objectClass = experiment.objectClass
-		variableExpr = prepareExprForPretty "#{@variable} = ", objectClass
-		exprForPretty = prepareExprForPretty expression, objectClass
+		
+
+		variableExpr = prepareExprForPretty "#{@variable} = ", experiment
+		exprForPretty = prepareExprForPretty expression, experiment
 
 	
 Template.oneFunction.events
