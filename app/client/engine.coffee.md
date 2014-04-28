@@ -12,6 +12,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 			@calcMode = "rungekutta"
 			@mathjs = mathjs()
+			@mathjs.config matrix: 'array'
 			@math = @mathjs.parser()
 			# we use this dep to inform observers on changes
 			if Deps?.Dependency?
@@ -62,14 +63,12 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 					when "rungekutta" then changes = @calcRungeKuttaChanges @math.scope
 					else changes = @calcEulerChanges @math.scope
 				
-
 				results = @eulerStep @math.scope, changes
-
+				
 				# write back results to scope
 				for variable, result of results
 					@math.scope[variable] = result
 				@math.scope.t += @math.scope.dt
-
 				# break if enough steps are made
 				stepCounterAfter = Math.floor @math.scope.t / @drawInterval
 			
@@ -159,6 +158,7 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 						@math.scope[variable] = value
 			if @objects?
 				for anObject in @objects
+
 					for variable, valueString of anObject
 						type = @types[variable]
 						if variable? and variable.length > 0 and valueString? and type?
@@ -190,7 +190,6 @@ So if an object is a vector, we have a 2-dimensional matrix, the syntax is then 
 						switch objectType
 							when "Scalar" then expr = expr.replace regex, "#{variable}[i]"
 							when "Vector" then expr = expr.replace regex, "#{variable}[i,:]"
-
 					try
 						@_compiledExpression[aFunction.variable] = @math.compile expr
 					catch error
