@@ -2,7 +2,7 @@ Router.map ->
 	@route 'home',
 		path: "/"
 		data: ->
-			experiments: Experiments.find()
+			experiments: Experiments.find {}, sort: name: 1
 
 createExperiment = ->
 	experimentID = Experiments.insert {name: "Sample Experiment (click to edit name)"}
