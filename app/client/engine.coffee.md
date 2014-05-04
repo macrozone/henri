@@ -1,6 +1,6 @@
 # Engine
 
-The engine is the hearth of Henri, it uses [mathjs](mathjs.org) internally.
+The engine is the hearth of Henri, it uses [mathjs](mathjs.org) _ally.
 The current data of the calculation can be accessed with engine.getScope() (scope is a terminus from mathjs)
 The engine is a [reactive Meteor-Datasource](http://docs.meteor.com/#reactivity),
 so if you access getScope in a reactive context, it will be re-run, if the data changes here
@@ -83,13 +83,14 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 ## Euler
 
 		calcEulerChanges: (scope)->
+
 			results = {}
-			for object, i in @objects
-				scope.i = i+1 # mathjs indices begin with 1
+			for object, _i in @objects
+				scope._i = _i+1 # mathjs indices begin with 1
 				for variable, expression of @_compiledExpression
 					result = expression.eval scope
 					results[variable] = [] unless results[variable]?
-					results[variable][i] = result
+					results[variable][_i] = result
 			results
 
 		eulerStep: (scope, changes) ->
@@ -106,6 +107,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 		calcRungeKuttaChanges: (scope) ->
 			currentScope = Tools.cloneObject scope
+			@assignCustomFunctionsToScope currentScope
 
 this is the change-vector for all objects at time t
 
@@ -149,6 +151,7 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 			@math.scope = {
 				t: 0,
 				dt: 0.1
+				n: @objects?.length
 			}
 			if @constants?
 				for constant in @constants
@@ -171,14 +174,17 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 		initFunctions: ->
 			cursor = Functions.find {experimentID: @experimentID}
 			@_compiledExpression = {}
+			@assignCustomFunctionsToScope @math.scope
 			cursor.forEach (aFunction) => 
 				type = @types[aFunction.variable]
 				expr = aFunction?.expression
 				
 				if type? and expr? and expr.length > 0
+					
 					regex = new RegExp "\\|([^\\|]+)\\|", "g"
 					expr = expr.replace regex, "norm($1)"
 					
+					expr = CustomFunctions.escapeSum expr
 
 we have every object in an array. The current object is always index i. 
 We therefore change the expressions slightly and add an index [i] to them
@@ -188,12 +194,21 @@ So if an object is a vector, we have a 2-dimensional matrix, the syntax is then 
 					for variable, objectType of @types
 						regex = new RegExp "\\b#{variable}\\b", "g"
 						switch objectType
-							when "Scalar" then expr = expr.replace regex, "#{variable}[i]"
-							when "Vector" then expr = expr.replace regex, "#{variable}[i,:]"
+							when "Scalar" then expr = expr.replace regex, "#{variable}[_i]"
+							when "Vector" then expr = expr.replace regex, "#{variable}[_i,:]"
+						regex = new RegExp "\\b#{variable}_k\\b", "g"
+
+						switch objectType
+							when "Scalar" then expr = expr.replace regex, "#{variable}[_k]"
+							when "Vector" then expr = expr.replace regex, "#{variable}[_k,:]"
 					try
+						console.log "compile: #{expr}"
 						@_compiledExpression[aFunction.variable] = @math.compile expr
 					catch error
 						console.error error
+
+		assignCustomFunctionsToScope: (scope) ->
+			scope["sum"] = _.bind CustomFunctions.sum, {engine:@, scope:scope}
 
 ## Static helpers, may be removed
 
