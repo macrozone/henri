@@ -62,12 +62,12 @@ prepareExprForPretty = (expr, experiment) ->
 	{objectClass, constants} = experiment
 
 	prepareOneVar = (variable) ->
-		if variable.variable? and variable.variable.length > 0 and variable.type == "Vector"
+		if variable?.variable?.length > 0 and variable.type == "Vector"
 			regex = new RegExp "\\b#{variable.variable}(_i)?\\b", "g"
 			expr = expr.replace regex, "vec(#{variable.variable}$1)"
 
-	prepareOneVar variable for variable in objectClass
-	prepareOneVar variable for variable in constants
+	if objectClass? then prepareOneVar variable for variable in objectClass
+	if constants? then prepareOneVar variable for variable in constants
 		
 	return '`'+expr+'`'
 
