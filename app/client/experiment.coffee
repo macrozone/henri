@@ -99,7 +99,17 @@ onFunctionChange = (event, template)->
 		Functions.insert doc
 
 	
-
+onDdtCheckboxChange = (event, template) ->
+	query = {experimentID: Session.get("experimentID"), variable: template.data.variable}
+	aFunction = Functions.findOne query
+	
+	calcDiff = $(event.target).is ":checked"
+	if aFunction?
+		Functions.update {_id: aFunction._id}, $set: calcDiff: calcDiff
+	else
+		doc = query
+		doc.calcDiff = calcDiff
+		Functions.insert doc
 		
 Template.functions.rendered = ->
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub])
@@ -107,10 +117,26 @@ Template.functions.rendered = ->
 Template.oneFunction.rendered = ->
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub])
 
+shouldCalcDiff = (data)->
+	experiment = Experiments.findOne {_id: Session.get("experimentID")}
+	aFunction = Functions.findOne {experimentID: experiment._id, variable: data.variable}
+
+	if aFunction?.calcDiff?
+		aFunction.calcDiff
+	else
+		true
+
+Template.oneFunction.calcDiff = ->
+	shouldCalcDiff @
+
 Template.oneFunction.variable = ->
 	experiment = Experiments.findOne {_id: Session.get("experimentID")}
-
-	prepareExprForPretty "d/dt "+@variable, experiment
+	calcDiff = shouldCalcDiff @
+	if calcDiff
+		diffOperator = "d/dt "
+	else
+		diffOperator = ""
+	prepareExprForPretty diffOperator+@variable, experiment
 
 Template.oneFunction.function = ->
 
@@ -129,7 +155,7 @@ Template.oneFunction.expressionForPretty = ->
 
 	
 Template.oneFunction.events
-	
+	"change input.ddt": onDdtCheckboxChange
 	"change input.function": onFunctionChange
 	"keyup input.function" : onFunctionChange
 	"change input.comment": onCommentChange

@@ -59,13 +59,15 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 		step: ->
 			stepCounterBefore = Math.floor @math.scope.t / @drawInterval
 			while true
-				switch @calcMode
-					when "rungekutta" then changes = @calcRungeKuttaChanges @math.scope
-					else changes = @calcEulerChanges @math.scope
-				
-				results = @eulerStep @math.scope, changes
-				
+
+				results = @calcAbsoluteFunctions @math.scope
+
+				diffResults = @calcDiffFunctions @math.scope
+
+				for variable, result of diffResults
+					results[variable] = result
 				# write back results to scope
+
 				for variable, result of results
 					@math.scope[variable] = result
 				@math.scope.t += @math.scope.dt
@@ -75,24 +77,39 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 				break if stepCounterAfter > stepCounterBefore
 					
 			# propagate change, this will redraw all plots
-			# we will also add the changes to the scope, so we can plot them
-			@addChangeVectorToScope changes
+			
 
 			@dataDep?.changed()
+
+		calcAbsoluteFunctions: (scope)->
+			@calcObjectFunctions 'absolute', scope
+
+		calcDiffFunctions: (scope)->
+
+			switch @calcMode
+				when "rungekutta" then changes = @calcRungeKuttaChanges scope
+				else changes = @calcEulerChanges @math.scope
+			
+			results = @eulerStep scope, changes
+			
+			# we will also add the changes to the scope, so we can plot them
+			@addChangeVectorToScope changes
+			return results
 
 ## Euler
 
 		calcEulerChanges: (scope)->
-
+			@calcObjectFunctions "diff", scope
+		calcObjectFunctions: (type, scope) ->
 			results = {}
 			for object, _i in @objects
 				scope._i = _i+1 # mathjs indices begin with 1
-				for variable, expression of @_compiledExpression
+				for variable, expression of @_compiledExpression[type]
+					
 					result = expression.eval scope
 					results[variable] = [] unless results[variable]?
 					results[variable][_i] = result
 			results
-
 		eulerStep: (scope, changes) ->
 			results = {}
 			for variable, value of changes
@@ -106,6 +123,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 ## [Runge-Kutta](http://de.wikipedia.org/wiki/Runge-Kutta-Verfahren)
 
 		calcRungeKuttaChanges: (scope) ->
+			# we need a copy here
 			currentScope = Tools.cloneObject scope
 			@assignCustomFunctionsToScope currentScope
 
@@ -173,11 +191,16 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 
 		initFunctions: ->
 			cursor = Functions.find {experimentID: @experimentID}
-			@_compiledExpression = {}
+			@_compiledExpression = "diff": {}, "absolute": {}
 			@assignCustomFunctionsToScope @math.scope
 			cursor.forEach (aFunction) => 
 				type = @types[aFunction.variable]
 				expr = aFunction?.expression
+
+				if aFunction.calcDiff?
+					functionType = if aFunction.calcDiff then "diff" else "absolute"
+				else
+					functionType = "diff"
 				
 				if type? and expr? and expr.length > 0
 					
@@ -203,7 +226,8 @@ So if an object is a vector, we have a 2-dimensional matrix, the syntax is then 
 							when "Vector" then expr = expr.replace regex, "#{variable}[_k,:]"
 					try
 						console.log "compile: #{expr}"
-						@_compiledExpression[aFunction.variable] = @math.compile expr
+
+						@_compiledExpression[functionType][aFunction.variable] = @math.compile expr
 					catch error
 						console.error error
 

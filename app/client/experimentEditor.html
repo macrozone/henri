@@ -34,7 +34,7 @@
 <template name="oneFunction">
 	<tr>
 
-		<td>{{variable}}</td>
+		<td><input type="checkbox" class="ddt" checked="{{calcDiff}}"/></td><td>{{variable}}</td>
 		<td>=</td>
 		<td width="40%"><input id="function_{{variable}}" class="function form-control" placeholder="function" type="text" value="{{function.expression}}" /></td>
 		<td><div class="pretty">{{expressionForPretty}}</div>
