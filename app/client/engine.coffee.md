@@ -61,15 +61,11 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			while true
 
 				results = @calcAbsoluteFunctions @math.scope
-
-				diffResults = @calcDiffFunctions @math.scope
-
-				for variable, result of diffResults
-					results[variable] = result
-				# write back results to scope
-
-				for variable, result of results
-					@math.scope[variable] = result
+				@addResultsToScope results
+		
+				results = @calcDiffFunctions @math.scope
+				@addResultsToScope results
+				
 				@math.scope.t += @math.scope.dt
 				# break if enough steps are made
 				stepCounterAfter = Math.floor @math.scope.t / @drawInterval
@@ -80,6 +76,10 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			
 
 			@dataDep?.changed()
+
+		addResultsToScope: (results) ->
+			for variable, result of results
+				@math.scope[variable] = result
 
 		calcAbsoluteFunctions: (scope)->
 			@calcObjectFunctions 'absolute', scope
@@ -102,10 +102,10 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			@calcObjectFunctions "diff", scope
 		calcObjectFunctions: (type, scope) ->
 			results = {}
+			expressions = @_compiledExpression[type]
 			for object, _i in @objects
 				scope._i = _i+1 # mathjs indices begin with 1
-				for variable, expression of @_compiledExpression[type]
-					
+				for variable, expression of expressions
 					result = expression.eval scope
 					results[variable] = [] unless results[variable]?
 					results[variable][_i] = result
