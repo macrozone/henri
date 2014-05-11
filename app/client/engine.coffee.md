@@ -67,6 +67,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 				@addResultsToScope results
 				
 				@math.scope.t += @math.scope.dt
+				console.log(@math.scope.dt)
 				# break if enough steps are made
 				stepCounterAfter = Math.floor @math.scope.t / @drawInterval
 			
@@ -157,7 +158,9 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 
 		initExperiment: ->
 			experiment = Experiments.findOne _id: @experimentID
+			#experiment = Tools.sanitizeExperiment experiment
 			if experiment? and experiment.objectClass?
+				@fixedFields = experiment.fixedFields;
 				@constants = experiment.constants
 				@objects = _.filter experiment.objects, _isValidObject
 				@types = {}
@@ -171,6 +174,11 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 				dt: 0.1
 				n: @objects?.length
 			}
+			if @fixedFields?
+				for item in @fixedFields
+					{variable:variable,value:value} = item
+					if variable? and value?
+						@math.scope[variable] = _parseValue value, 'Scalar'
 			if @constants?
 				for constant in @constants
 					{type:type, variable: variable, value:valueString} = constant

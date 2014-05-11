@@ -1,24 +1,29 @@
+<template name="fixedFieldsEditor">
+    <h4>1.) Fixed fields</h4>
+    <div class="table"></div>
+</template>
+
 <template name="constantsEditor">
-	<h4>1.) Define Constants</h4>
+	<h4>2.) Define Constants</h4>
 	<div class="table"></div>
 </template>
+
 <template name="objectClassEditor">
-	<h4>2.) Define the Object Class</h4>
+	<h4>3.) Define the Object Class</h4>
 	<div class="table"></div>
-
-
 </template>
 
 <template name="objectEditor">
-	<h4>3.) Define Objects</h4>
+	<h4>4.) Define Objects</h4>
 	<div class="table"></div>
 </template>
 
 <template name="test">
 	<p>{{test}}</p>
 </template>
+
 <template name="functions">
-	<h4>4.) Define Functions</h4>
+	<h4>5.) Define Functions</h4>
 	<table class="functions">
 		{{#each variables}}
 		{{#if variable}}
@@ -31,6 +36,7 @@
 		{{/each}}
 	</table>
 </template>
+
 <template name="oneFunction">
 	<tr>
 

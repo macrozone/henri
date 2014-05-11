@@ -26,7 +26,7 @@ Router.map ->
 		onStop: ->
 			engine?.stop()
 			engine = null
-			
+
 Template.experimentName.events
 	"click h2": (event, template) ->
 		$(template.find("input")).show()

@@ -24,3 +24,23 @@ escapeSum = (s) ->
 	insertStringAtPosition: (s, insertString, position) ->
 		[s.slice(0, position), insertString, s.slice(position)].join('')
 
+	sanitizeExperiment: (experiment) ->
+		hasDt = false;
+		for field in experiment.fixedFields
+			if (field.variable == 'dtt')
+				hasDt = true;
+
+		console.log experiment
+		data = experiment.fixedFields
+
+		if (!hasDt)
+			data.push {
+				description: 'Berechnungszeitschritt'
+				value: '0.01'
+				variable: 'dt'
+			}
+			Experiments.update {_id: experiment._id}, {$set: "fixedFields": data}
+			experiment.fixedFields = data;
+
+		experiment
+
