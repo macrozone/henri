@@ -27,14 +27,14 @@ escapeSum = (s) ->
 	sanitizeExperiment: (experiment) ->
 		hasDt = false;
 		hasPt = false;
-		if experiment.fixedFields?
-			for field in experiment.fixedFields
+		if experiment.configurations?
+			for field in experiment.configurations
 				if field.variable == 'dt'
 					hasDt = true;
 				if field.variable == 'pt'
 					hasPt = true;
 
-		data = experiment.fixedFields
+		data = experiment.configurations
 		data = [] if !data?
 
 		if (!hasDt || !hasPt)
@@ -50,8 +50,8 @@ escapeSum = (s) ->
 					value: '0.1'
 					variable: 'pt'
 				}
-			Experiments.update {_id: experiment._id}, {$set: "fixedFields": data}
-			experiment.fixedFields = data;
+			Experiments.update {_id: experiment._id}, {$set: "configurations": data}
+			experiment.configurations = data;
 
 		experiment
 

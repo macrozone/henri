@@ -161,7 +161,7 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 			experiment = Experiments.findOne _id: @experimentID
 			experiment = Tools.sanitizeExperiment experiment
 			if experiment? and experiment.objectClass?
-				@fixedFields = experiment.fixedFields;
+				@configurations = experiment.configurations;
 				@constants = experiment.constants
 				@objects = _.filter experiment.objects, _isValidObject
 				@types = {}
@@ -171,7 +171,7 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 						@types[variable] = type
 
 		getDrawInterval: ->
-			for field in @fixedFields
+			for field in @configurations
 				if field.variable == 'pt'
 					return field.value
 
@@ -181,8 +181,8 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 				dt: 0.1
 				n: @objects?.length
 			}
-			if @fixedFields?
-				for item in @fixedFields
+			if @configurations?
+				for item in @configurations
 					{variable:variable,value:value} = item
 					if variable? and value?
 						@math.scope[variable] = _parseValue value, 'Scalar'
