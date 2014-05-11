@@ -158,7 +158,7 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 
 		initExperiment: ->
 			experiment = Experiments.findOne _id: @experimentID
-			#experiment = Tools.sanitizeExperiment experiment
+			experiment = Tools.sanitizeExperiment experiment
 			if experiment? and experiment.objectClass?
 				@fixedFields = experiment.fixedFields;
 				@constants = experiment.constants

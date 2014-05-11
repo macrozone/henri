@@ -26,12 +26,14 @@ escapeSum = (s) ->
 
 	sanitizeExperiment: (experiment) ->
 		hasDt = false;
-		for field in experiment.fixedFields
-			if (field.variable == 'dtt')
-				hasDt = true;
+		if experiment.fixedFields?
+			for field in experiment.fixedFields
+				if (field.variable == 'dt')
+					hasDt = true;
 
 		console.log experiment
 		data = experiment.fixedFields
+		data = [] if !data?
 
 		if (!hasDt)
 			data.push {
