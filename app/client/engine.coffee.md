@@ -52,6 +52,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			@initExperiment()
 			@initScope()
 			@initFunctions()
+			@drawInterval = @getDrawInterval()
 			#propagate initial scope
 			@dataDep?.changed()
 
@@ -168,6 +169,12 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 					{type:type, variable: variable} = oneVar
 					if type? and variable? and type.length > 0 and variable.length > 0
 						@types[variable] = type
+
+		getDrawInterval: ->
+			for field in @fixedFields
+				if field.variable == 'pt'
+					return field.value
+
 		initScope: ->
 			@math.scope = {
 				t: 0,

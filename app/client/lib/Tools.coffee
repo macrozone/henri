@@ -26,21 +26,30 @@ escapeSum = (s) ->
 
 	sanitizeExperiment: (experiment) ->
 		hasDt = false;
+		hasPt = false;
 		if experiment.fixedFields?
 			for field in experiment.fixedFields
-				if (field.variable == 'dt')
+				if field.variable == 'dt'
 					hasDt = true;
+				if field.variable == 'pt'
+					hasPt = true;
 
-		console.log experiment
 		data = experiment.fixedFields
 		data = [] if !data?
 
-		if (!hasDt)
-			data.push {
-				description: 'Berechnungszeitschritt'
-				value: '0.01'
-				variable: 'dt'
-			}
+		if (!hasDt || !hasPt)
+			if (!hasDt)
+				data.push {
+					description: 'Berechnungszeitschritt'
+					value: '0.01'
+					variable: 'dt'
+				}
+			if (!hasPt)
+				data.push {
+					description: 'Zeichnenzeitschritt'
+					value: '0.1'
+					variable: 'pt'
+				}
 			Experiments.update {_id: experiment._id}, {$set: "fixedFields": data}
 			experiment.fixedFields = data;
 
