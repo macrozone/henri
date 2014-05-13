@@ -27,14 +27,14 @@ escapeSum = (s) ->
 	sanitizeExperiment: (experiment) ->
 		hasDt = false;
 		hasPt = false;
-		if experiment.configurations?
+		if experiment?.configurations?
 			for field in experiment.configurations
 				if field.variable == 'dt'
 					hasDt = true;
 				if field.variable == 'pt'
 					hasPt = true;
 
-		data = experiment.configurations
+		data = experiment?.configurations
 		data = [] if !data?
 
 		if (!hasDt || !hasPt)

@@ -52,7 +52,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			@initExperiment()
 			@initScope()
 			@initFunctions()
-			@drawInterval = @getDrawInterval()
+			
 			#propagate initial scope
 			@dataDep?.changed()
 
@@ -68,7 +68,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 				@addResultsToScope results
 				
 				@math.scope.t += @math.scope.dt
-				console.log(@math.scope.dt)
+				
 				# break if enough steps are made
 				stepCounterAfter = Math.floor @math.scope.t / @drawInterval
 			
@@ -159,9 +159,11 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 
 		initExperiment: ->
 			experiment = Experiments.findOne _id: @experimentID
-			experiment = Tools.sanitizeExperiment experiment
 			if experiment? and experiment.objectClass?
-				@configurations = experiment.configurations;
+				experiment = Tools.sanitizeExperiment experiment
+				
+				@configurations = experiment.configurations
+				@drawInterval = @_getDrawInterval()
 				@constants = experiment.constants
 				@objects = _.filter experiment.objects, _isValidObject
 				@types = {}
@@ -170,7 +172,7 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 					if type? and variable? and type.length > 0 and variable.length > 0
 						@types[variable] = type
 
-		getDrawInterval: ->
+		_getDrawInterval: ->
 			for field in @configurations
 				if field.variable == 'pt'
 					return field.value
