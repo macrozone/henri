@@ -35,7 +35,6 @@ Template.objectEditor.rendered = ->
 							when 'Scalar' 
 								columnOption = 
 									data: obj.variable
-									type: "numeric"
 							when 'Vector'
 								columnOption = 
 									data: obj.variable

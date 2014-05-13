@@ -4,8 +4,9 @@
 	Plots.insert 
 		experimentID: experimentID
 		type: "x_t"
-		variablesToPlot:['x', 'v', 'a', 'luft']
+		variablesToPlot:['x','y', 'v', 'a', 'luft']
 		timeRange: 50
+		title: ""
 		highchartsOptions:
 			chart: 
 				zoomType: "x"

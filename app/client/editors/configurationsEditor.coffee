@@ -16,7 +16,8 @@ Template.configurationsEditor.rendered = ->
 			else
 				$table.handsontable
 					data: data
-					minSpareRows: 1
+					minSpareRows: 0
+
 					colHeaders: ["Constant", "Description", "Value"],
 					readOnly: true
 					columns: [
