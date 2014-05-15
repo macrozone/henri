@@ -9,6 +9,8 @@ Work in progress.
 
 See current version here: http://henri.macrozone.ch
 
+built with [Meteor](http://meteor.com) and [mathjs](http://mathjs.org/)
+
 Team
 ----
 - Marco "macrozone" Wettstein
