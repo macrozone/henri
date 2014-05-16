@@ -56,7 +56,7 @@ Template.plot_x_t_controls.schema = ->
 
 		y_vars: 
 			type: [String],
-			label: "Expressions to plot on y-Axis (per Object)"
+			label: "Expressions to plot on y-Axis (per Object). Supports mathjs expressions. x[1]: plot first dimension. _d_x[1]: plot differential of x"
 
 
 drawDataOnChart = (chart, series, data)->
@@ -120,7 +120,7 @@ addSerieIfNeeded = (engine, chart, series, var_expression, index) ->
 		highchartSerie = chart.addSeries 
 			id: "#{var_expression}_#{index}"
 			data: []
-			name: "#{var_expression} #{index}"
+			name: "Object #{index}: #{var_expression} "
 		series[var_expression][index] = 
 			highchartSerie: highchartSerie
 			compiledExpression: engine.compileExpression var_expression
