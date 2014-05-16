@@ -1,9 +1,25 @@
 <template name="plot_x_t">
 	
 	<div>
-	<button class="btn btn-clear">Clear</button>
+		<button class="btn btn-clear">Clear</button>
 	</div>
-	<input type="number" class="form-control input-timeRange" value="{{plot.timeRange}}"/>
 	
-	<div class="chartcontainer"></div>
+
+	<div class="chartcontainer col-xs-12 col-sm-7 col-md-8 col-lg-9"></div>
+	<div class="col-xs-12 col-sm-5 col-md-4 col-lg-3">
+		{{>plot_x_t_controls}}
+	</div>
+</template>
+
+<template name="plot_x_t_controls">
+	<div class="plotControls panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">Plot Options</h3>
+		</div>
+		<div class="panel-body">
+			{{>quickForm collection="Plots" type="update" doc=plot id=plot._id schema=schema}}
+		</div>
+	</div>
+
+
 </template>

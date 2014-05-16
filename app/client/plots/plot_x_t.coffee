@@ -4,8 +4,8 @@
 	Plots.insert 
 		experimentID: experimentID
 		type: "x_t"
-		variablesToPlot:['x','y', 'v', 'a', 'luft']
-		timeRange: 50
+		y_vars:['x'],
+		t_range: 50
 		title: ""
 		highchartsOptions:
 			chart: 
@@ -28,7 +28,9 @@ Template.plot_x_t.rendered = ->
 		data.plot = Plots.findOne {_id:data.plot._id}
 
 	@data.plot.highchartsOptions.chart.renderTo = @find ".chartcontainer"
+	@data.plot.highchartsOptions.title = "" 
 	chart = new Highcharts.Chart @data.plot.highchartsOptions
+	window._testchart = chart
 	engine = @data.engine
 	experimentID = @data.experimentID
 	
@@ -42,10 +44,19 @@ Template.plot_x_t.events
 	"click .btn-clear": (event, template)->
 		chart = template.$(".chartcontainer").highcharts()
 		serie.setData [] for serie in chart.series
-	"change .input-timeRange": (event, template) ->
-		Plots.update {_id: template.data.plot._id}, $set: timeRange: $(event.target).val()
+	
 
+Template.plot_x_t_controls.schema = ->
+	new SimpleSchema 
+		t_range: 
+			type: Number,
+			label: "x-Range"
+			min: 1
+		
 
+		y_vars: 
+			type: [String],
+			label: "Expressions to plot on y-Axis (per Object)"
 
 
 drawDataOnChart = (chart, series, data)->
@@ -53,29 +64,65 @@ drawDataOnChart = (chart, series, data)->
 	{engine, plot} = data
 	
 	currentScope = engine.getScope()
-	for variable in plot.variablesToPlot
-		if currentScope?[variable]?
-			if _.isArray currentScope[variable]
-				for value, index in currentScope[variable]
-					serie = addSerieIfNeeded chart, series, variable, index
-				
-					if _.isArray value
-						# it is a vector, take its first dimension
-						value = value[0]
-					tMin = Math.max(0,currentScope.t - plot.timeRange)
-					tMax = Math.max(plot.timeRange,currentScope.t)
-				
-					chart.xAxis[0].setExtremes tMin, tMax, false
-					shift = currentScope.t - serie.data[0]?.x > plot.timeRange
-					serie.addPoint [currentScope.t, value], false, shift, false
-		chart.redraw()
+	
+	checkSeries engine, plot, chart, series
+	
+	
+
+	for key, serieGroup of series
+		
+		
+		for serie, index in serieGroup
+			
+			currentScope._i = index+1 # mathjs indices begin with 1
+
+		
+			
+			value = serie.compiledExpression.eval currentScope	
+			if _.isArray value
+				value = value[0] # sanitize
+			
+			xValue = currentScope.t
+			xMin = Math.max(0,xValue - plot.t_range)
+			xMax = Math.max(plot.t_range,xValue)
+		
+			chart.xAxis[0].setExtremes xMin, xMax, false
+			shift = xValue - serie.highchartSerie.data[0]?.x > plot.t_range
+			serie.highchartSerie.addPoint [xValue, value], false, shift, false
+		
+	chart.redraw()
+
+
+checkSeries = (engine, plot, chart, series) ->
+	flags = {}
+	for var_expression in plot.y_vars
+		if var_expression?
+			flags[var_expression] = true
+			for object, index in engine.objects
+				addSerieIfNeeded engine, chart, series, var_expression, index
+	seriesToRemove = []
+	for var_expression, serie  of series
+		unless flags[var_expression]?
+			seriesToRemove.push var_expression
+	
+	for var_expression in seriesToRemove
+		for serie, index in series[var_expression]
+			serie.highchartSerie?.remove()
+		delete series[var_expression]
 
 
 
-addSerieIfNeeded = (chart, series, variable, index) ->
-	unless series[variable]?[index]?
-		series[variable] = [] unless series[variable]?
-		series[variable][index] = chart.addSeries 
+
+addSerieIfNeeded = (engine, chart, series, var_expression, index) ->
+	
+	unless series[var_expression]?[index]?
+		series[var_expression] = [] unless series[var_expression]?
+		highchartSerie = chart.addSeries 
+			id: "#{var_expression}_#{index}"
 			data: []
-			name: "#{variable} #{index}"
-	series[variable][index]
+			name: "#{var_expression} #{index}"
+		series[var_expression][index] = 
+			highchartSerie: highchartSerie
+			compiledExpression: engine.compileExpression var_expression
+
+	series[var_expression][index]

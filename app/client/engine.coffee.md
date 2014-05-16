@@ -220,33 +220,40 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 					functionType = "diff"
 				
 				if type? and expr? and expr.length > 0
+					try
+						@_compiledExpression[functionType][aFunction.variable] = @compileExpression expr
+					catch error
+						console.error error
 					
-					regex = new RegExp "\\|([^\\|]+)\\|", "g"
-					expr = expr.replace regex, "norm($1)"
-					
-					expr = CustomFunctions.escapeSum expr
+
+		compileExpression: (expr) ->
+			# prepare norm |..|
+			regex = new RegExp "\\|([^\\|]+)\\|", "g"
+			expr = expr.replace regex, "norm($1)"
+			
+			expr = CustomFunctions.escapeSum expr
 
 we have every object in an array. The current object is always index i. 
 We therefore change the expressions slightly and add an index [i] to them
 So if an object is a vector, we have a 2-dimensional matrix, the syntax is then with [i,:]
 
-					
-					for variable, objectType of @types
-						regex = new RegExp "\\b#{variable}\\b", "g"
-						switch objectType
-							when "Scalar" then expr = expr.replace regex, "#{variable}[_i]"
-							when "Vector" then expr = expr.replace regex, "#{variable}[_i,:]"
-						regex = new RegExp "\\b#{variable}_k\\b", "g"
+_d_ is a special placeholder indicating a diff-vector of this variable. This is seldom used, 
+however, it can be used to plot diff vectors
 
-						switch objectType
-							when "Scalar" then expr = expr.replace regex, "#{variable}[_k]"
-							when "Vector" then expr = expr.replace regex, "#{variable}[_k,:]"
-					try
-						console.log "compile: #{expr}"
+			
+			for variable, objectType of @types
+				regex = new RegExp "\\b(_d_)?#{variable}\\b", "g"
+				switch objectType
+					when "Scalar" then expr = expr.replace regex, "$1#{variable}[_i]"
+					when "Vector" then expr = expr.replace regex, "$1#{variable}[_i,:]"
+				regex = new RegExp "\\b(_d_)?#{variable}_k\\b", "g"
 
-						@_compiledExpression[functionType][aFunction.variable] = @mathjs.compile expr
-					catch error
-						console.error error
+				switch objectType
+					when "Scalar" then expr = expr.replace regex, "$1#{variable}[_k]"
+					when "Vector" then expr = expr.replace regex, "$1#{variable}[_k,:]"
+			console.log "compile: #{expr}"
+
+			return @mathjs.compile expr
 
 		assignCustomFunctionsToScope: (scope) ->
 			scope["sum"] = _.bind CustomFunctions.sum, {engine:@, scope:scope}
