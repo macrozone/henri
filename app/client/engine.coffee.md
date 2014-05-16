@@ -13,7 +13,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			@calcMode = "rungekutta"
 			@mathjs = mathjs()
 			@mathjs.config matrix: 'array'
-			@math = @mathjs.parser()
+			
 			# we use this dep to inform observers on changes
 			if Deps?.Dependency?
 				@dataDep = new Deps.Dependency
@@ -27,7 +27,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 		getScope: ->
 			@dataDep?.depend()
-			@math.scope
+			@scope
 	
 		isRunning: ->
 			@stateDep?.depend()
@@ -58,19 +58,19 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 
 		step: ->
-			stepCounterBefore = Math.floor @math.scope.t / @drawInterval
+			stepCounterBefore = Math.floor @scope.t / @drawInterval
 			while true
 
-				results = @calcAbsoluteFunctions @math.scope
+				results = @calcAbsoluteFunctions @scope
 				@addResultsToScope results
 		
-				results = @calcDiffFunctions @math.scope
+				results = @calcDiffFunctions @scope
 				@addResultsToScope results
 				
-				@math.scope.t += @math.scope.dt
+				@scope.t += @scope.dt
 				
 				# break if enough steps are made
-				stepCounterAfter = Math.floor @math.scope.t / @drawInterval
+				stepCounterAfter = Math.floor @scope.t / @drawInterval
 			
 				break if stepCounterAfter > stepCounterBefore
 					
@@ -81,7 +81,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 		addResultsToScope: (results) ->
 			for variable, result of results
-				@math.scope[variable] = result
+				@scope[variable] = result
 
 		calcAbsoluteFunctions: (scope)->
 			@calcObjectFunctions 'absolute', scope
@@ -90,7 +90,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 			switch @calcMode
 				when "rungekutta" then changes = @calcRungeKuttaChanges scope
-				else changes = @calcEulerChanges @math.scope
+				else changes = @calcEulerChanges @scope
 			
 			results = @eulerStep scope, changes
 			
@@ -120,7 +120,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 		addChangeVectorToScope: (changes) ->
 			for variable, value of changes
-				@math.scope[Tools.getDiffVariableName variable] = value
+				@scope[Tools.getDiffVariableName variable] = value
 
 ## [Runge-Kutta](http://de.wikipedia.org/wiki/Runge-Kutta-Verfahren)
 
@@ -178,7 +178,7 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 					return field.value
 
 		initScope: ->
-			@math.scope = {
+			@scope = {
 				t: 0,
 				dt: 0.1
 				n: @objects?.length
@@ -187,21 +187,21 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 				for item in @configurations
 					{variable:variable,value:value} = item
 					if variable? and value?
-						@math.scope[variable] = _parseValue value, 'Scalar'
+						@scope[variable] = _parseValue value, 'Scalar'
 			if @constants?
 				for constant in @constants
 					{type:type, variable: variable, value:valueString} = constant
 					if type? and valueString? and variable?
 						value = _parseValue valueString, type
-						@math.scope[variable] = value
+						@scope[variable] = value
 			if @objects?
 				for anObject in @objects
 
 					for variable, valueString of anObject
 						type = @types[variable]
 						if variable? and variable.length > 0 and valueString? and type?
-							@math.scope[variable] = [] unless @math.scope[variable]?
-							@math.scope[variable].push _parseValue valueString, type
+							@scope[variable] = [] unless @scope[variable]?
+							@scope[variable].push _parseValue valueString, type
 						
 		
 			
@@ -209,7 +209,7 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 		initFunctions: ->
 			cursor = Functions.find {experimentID: @experimentID}
 			@_compiledExpression = "diff": {}, "absolute": {}
-			@assignCustomFunctionsToScope @math.scope
+			@assignCustomFunctionsToScope @scope
 			cursor.forEach (aFunction) => 
 				type = @types[aFunction.variable]
 				expr = aFunction?.expression
@@ -244,7 +244,7 @@ So if an object is a vector, we have a 2-dimensional matrix, the syntax is then 
 					try
 						console.log "compile: #{expr}"
 
-						@_compiledExpression[functionType][aFunction.variable] = @math.compile expr
+						@_compiledExpression[functionType][aFunction.variable] = @mathjs.compile expr
 					catch error
 						console.error error
 
