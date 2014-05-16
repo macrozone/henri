@@ -3,6 +3,8 @@
     "iron-router": {},
     "bootstrap-3": {},
     "Handsontable": {},
-    "highcharts": {}
+    "highcharts": {},
+    "collection2": {},
+    "autoform": {}
   }
 }
