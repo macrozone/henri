@@ -1,12 +1,24 @@
 
 shouldDrawGrid = true
+
 @addNewPlot_2 = (experimentID)->
 	Plots.insert 
 		experimentID: experimentID
 		type: "2d"
 		variablesToPlot:['x']
 
-	
+
+Template.plot_2d_controls.schema = ->
+	new SimpleSchema 
+		scale: 
+			type: String,
+			label: "scale"
+
+		
+		#y_vars: 
+		#	type: [String],
+		#	label: "Expressions to plot on y-Axis (per Object). Supports mathjs expressions. x[1]: plot first dimension. _d_x[1]: plot differential of x"
+
 
 clearCanvas = (canvas, context) ->
 	context.save();
@@ -42,17 +54,21 @@ drawGrid = (canvas, context) ->
 	context.strokeStyle = "black"
 	context.stroke()
 
-drawPixel = (context, point) ->
+drawPixel = (config, context, point) ->
 	[x,y] = point
 	context.beginPath();
-	context.arc 250+x,250-y, 5, 0, 2*Math.PI
+	context.arc config.centerX+x*config.scale,config.centerY-y*config.scale, 5, 0, 2*Math.PI
 	context.fill()
 
-drawArrow = (context, fromx, fromy, tox, toy) ->
-	fromx += 250
-	fromy = 250 - fromy
-	tox += 250
-	toy = 250 - toy
+drawArrow = (config, context, fromx, fromy, tox, toy) ->
+	fromx *= config.scale
+	fromy *= config.scale
+	tox *= config.scale
+	toy *= config.scale
+	fromx += config.centerX
+	fromy = config.centerY - fromy
+	tox += config.centerX
+	toy = config.centerY - toy
 	headlen = 8 # length of head in pixels
 	angle = Math.atan2(toy - fromy, tox - fromx)
 	context.beginPath()
@@ -91,14 +107,14 @@ getPointFromValue = (value) ->
 		[value[0], value[1]]
 	else
 		[value, 0]
-drawValueAsPixel = (context, value) ->
+drawValueAsPixel = (config, context, value) ->
 	point = getPointFromValue value
-	drawPixel context, point
+	drawPixel config, context, point
 
-drawValueAsVector = (context, anchorPoint, value) ->
+drawValueAsVector = (config, context, anchorPoint, value) ->
 	point = getPointFromValue value
 	endPoint = [anchorPoint[0] + point[0], anchorPoint[1] + point[1]]
-	drawArrow context, anchorPoint[0], anchorPoint[1], endPoint[0], endPoint[1]
+	drawArrow config, context, anchorPoint[0], anchorPoint[1], endPoint[0], endPoint[1]
 
 drawDataOnChart = (canvas, context, data)->
 	clearCanvas canvas, context
@@ -109,19 +125,23 @@ drawDataOnChart = (canvas, context, data)->
 	vectorsToPlot =
 		x: ["_d_v"]
 
+	config = 
+		centerX: canvas.width / 2
+		centerY: canvas.height / 2
+		scale: plot.scale || 1
 	currentScope = engine.getScope()
 	for variable in plot.variablesToPlot
 		if currentScope?[variable]?
 			if _.isArray currentScope[variable]
 				for value, index in currentScope[variable]
-					drawValueAsPixel context, value
+					drawValueAsPixel config, context, value
 
 					# draw vectors too
 
 					if vectorsToPlot[variable]?
 						for vectorVariable in vectorsToPlot[variable]
 							if currentScope[vectorVariable]?[index]?
-								drawValueAsVector context, getPointFromValue(value), currentScope[vectorVariable]?[index]
+								drawValueAsVector config, context, getPointFromValue(value), currentScope[vectorVariable]?[index]
 					
 					
 				

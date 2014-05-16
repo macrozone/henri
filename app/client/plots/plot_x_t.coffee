@@ -62,13 +62,9 @@ Template.plot_x_t_controls.schema = ->
 drawDataOnChart = (chart, series, data)->
 	
 	{engine, plot} = data
-	
 	currentScope = engine.getScope()
-	
 	checkSeries engine, plot, chart, series
 	
-	
-
 	for key, serieGroup of series
 		
 		
@@ -76,8 +72,6 @@ drawDataOnChart = (chart, series, data)->
 			
 			currentScope._i = index+1 # mathjs indices begin with 1
 
-		
-			
 			value = serie.compiledExpression.eval currentScope	
 			if _.isArray value
 				value = value[0] # sanitize
@@ -120,7 +114,7 @@ addSerieIfNeeded = (engine, chart, series, var_expression, index) ->
 		highchartSerie = chart.addSeries 
 			id: "#{var_expression}_#{index}"
 			data: []
-			name: "Object #{index}: #{var_expression} "
+			name: "Object #{index+1}: #{var_expression} "
 		series[var_expression][index] = 
 			highchartSerie: highchartSerie
 			compiledExpression: engine.compileExpression var_expression

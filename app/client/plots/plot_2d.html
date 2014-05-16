@@ -3,8 +3,25 @@
 	
 
 	
+	<div class="chartcontainer col-xs-12 col-sm-7 col-md-8 col-lg-9">
+		<canvas class="canvas" width="600" height="600"></canvas>
+	</div>
+	<div class="col-xs-12 col-sm-5 col-md-4 col-lg-3">
+		{{>plot_2d_controls}}
+	</div>
 	
-	<canvas class="canvas" width="500" height="500"></canvas>
 </template>
 
 
+<template name="plot_2d_controls">
+	<div class="plotControls panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">Plot Options</h3>
+		</div>
+		<div class="panel-body">
+			{{>quickForm collection="Plots" type="update" doc=plot id=plot._id schema=schema}}
+		</div>
+	</div>
+
+
+</template>
