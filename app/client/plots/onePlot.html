@@ -3,29 +3,29 @@
 
 
 <template name="onePlot">
-	<div class="col-xs-12 col-sm-12">
-		<div class="onePlot panel panel-default">
-			<div class="panel-heading">
-				<h5>{{plot.type}}</h5>
-				<button class="btn btn-delete btn-danger">
-						<span class="glyphicon glyphicon-remove"></span> Delete plot
-					</button>	
-			</div>
-			<div class="panel-body">
-				<div class="controls">
-					{{>engineControls}}
-					
-				</div>
-
-
-				{{#with chooseTemplate plot.type}}
-
-				{{#with ..}}
-				{{> ..}}         
-				{{/with}}
-				{{/with}}
-			</div>
+	
+	<div class="onePlot plot_{{plot.type}} panel panel-default">
+		<div class="panel-heading">
+			<h5>{{plot.type}}</h5>
+			<button class="btn btn-delete btn-danger">
+					<span class="glyphicon glyphicon-remove"></span> Delete plot
+				</button>	
 		</div>
+		<div class="panel-body">
+			<div class="controls">
+				{{>engineControls}}
+				
+			</div>
+
+
+			{{#with chooseTemplate plot.type}}
+
+			{{#with ..}}
+			{{> ..}}         
+			{{/with}}
+			{{/with}}
+		</div>
+
 	</div>
 </template>
 

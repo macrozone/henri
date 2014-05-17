@@ -45,7 +45,6 @@ Template.plot_x_t.events
 		chart = template.$(".chartcontainer").highcharts()
 		serie.setData [] for serie in chart.series
 	
-
 Template.plot_x_t_controls.schema = ->
 	new SimpleSchema 
 		t_range: 
@@ -59,6 +58,11 @@ Template.plot_x_t_controls.schema = ->
 			label: "Expressions to plot on y-Axis (per Object). Supports mathjs expressions. x[1]: plot first dimension. _d_x[1]: plot differential of x"
 
 
+Template.plot_x_t_controls.events
+	"keyup input, click button": _.debounce (event, template) =>
+		template.$("form").submit()
+	,300
+
 drawDataOnChart = (chart, series, data)->
 	
 	{engine, plot} = data
@@ -69,21 +73,26 @@ drawDataOnChart = (chart, series, data)->
 		
 		
 		for serie, index in serieGroup
-			
+
+			if engine.isResetted()
+				serie.highchartSerie.setData [] 
 			currentScope._i = index+1 # mathjs indices begin with 1
 
-			value = serie.compiledExpression.eval currentScope	
-			if _.isArray value
-				value = value[0] # sanitize
+			try
+				value = serie.compiledExpression.eval currentScope
+
+				if _.isArray value
+					value = value[0] # sanitize
+				
+				xValue = currentScope.t
+				xMin = Math.max(0,xValue - plot.t_range)
+				xMax = Math.max(plot.t_range,xValue)
 			
-			xValue = currentScope.t
-			xMin = Math.max(0,xValue - plot.t_range)
-			xMax = Math.max(plot.t_range,xValue)
-		
-			chart.xAxis[0].setExtremes xMin, xMax, false
-			shift = xValue - serie.highchartSerie.data[0]?.x > plot.t_range
-			serie.highchartSerie.addPoint [xValue, value], false, shift, false
-		
+				chart.xAxis[0].setExtremes xMin, xMax, false
+				shift = xValue - serie.highchartSerie.data[0]?.x > plot.t_range
+				serie.highchartSerie.addPoint [xValue, value], false, shift, false
+			catch e
+				console.error e
 	chart.redraw()
 
 
@@ -110,13 +119,18 @@ checkSeries = (engine, plot, chart, series) ->
 addSerieIfNeeded = (engine, chart, series, var_expression, index) ->
 	
 	unless series[var_expression]?[index]?
-		series[var_expression] = [] unless series[var_expression]?
-		highchartSerie = chart.addSeries 
-			id: "#{var_expression}_#{index}"
-			data: []
-			name: "Object #{index+1}: #{var_expression} "
-		series[var_expression][index] = 
-			highchartSerie: highchartSerie
-			compiledExpression: engine.compileExpression var_expression
+		try
+			compiledExpression = engine.compileExpression var_expression
+			series[var_expression] = [] unless series[var_expression]?
+			highchartSerie = chart.addSeries 
+				id: "#{var_expression}_#{index}"
+				data: []
+				name: "Object #{index+1}: #{var_expression} "
+			
+			series[var_expression][index] = 
+				highchartSerie: highchartSerie
+				compiledExpression: compiledExpression
+		catch e
+			console.error e
 
-	series[var_expression][index]
+	series[var_expression]?[index]

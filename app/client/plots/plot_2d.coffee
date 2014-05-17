@@ -1,5 +1,6 @@
+ 
 
-shouldDrawGrid = true
+DEFAULT_PLOT_SIZE = 100
 
 @addNewPlot_2 = (experimentID)->
 	Plots.insert 
@@ -10,9 +11,15 @@ shouldDrawGrid = true
 
 Template.plot_2d_controls.schema = ->
 	new SimpleSchema 
-		scale: 
+		size: 
 			type: String,
-			label: "scale"
+			label: "size"
+		vectors:
+			type: [String]
+			label: "Vectors x,y (first is anchor Point)"
+		
+
+		
 
 		
 		#y_vars: 
@@ -30,37 +37,61 @@ clearCanvas = (canvas, context) ->
 	# Restore the transform
 	context.restore();
 
-drawGrid = (canvas, context) ->
+drawGrid = (canvas, context, plot) ->
 	
 	width = canvas.width
 	height = canvas.height
-	
+	centerX = width/2
+	centerY = height/2
 	context.beginPath()
-	context.moveTo(0, height/2)
-	context.lineTo(width, height/2)
-	context.moveTo(width/2, 0)
-	context.lineTo(width/2, height)
+	context.moveTo(0, centerY)
+	context.lineTo(width, centerY)
+	context.moveTo(centerX, 0)
+	context.lineTo(centerX, height)
 
 	context.font = "20px Verdana"
-	context.fillText "x", width-15, height/2-10
-	context.fillText "y", width/2+10, 15
+	context.fillText "x", width-15, centerY-10
+	context.fillText "y", centerX+10, 15
+	
+	
 
-	for i in [1..9]
-		context.moveTo(width/10*i, height/2-5)
-		context.lineTo(width/10*i, height/2+5)
-		context.moveTo(width/2-5, height/10*i)
-		context.lineTo(width/2+5, height/10*i)
+	minMarkers = 5
+	maxMarkers = 50
+	numberOfMarkers = plot.size
+	
+	while numberOfMarkers < minMarkers
+		numberOfMarkers *=10
+	while numberOfMarkers > maxMarkers
+		numberOfMarkers /=10
+	
+	
+	
+	for i in [1..numberOfMarkers/2]
+		if i%5 == 0
+			markerHeight = if i%10 == 0 then 24 else 16
+		else
+			markerHeight = 8
+
+		context.moveTo(centerX+width/numberOfMarkers*i, centerY-markerHeight/2)
+		context.lineTo(centerX+width/numberOfMarkers*i, centerY+markerHeight/2)
+		context.moveTo(centerX-markerHeight, centerY+height/numberOfMarkers*i)
+		context.lineTo(centerX+markerHeight, centerY+height/numberOfMarkers*i)
+
+		context.moveTo(centerX-width/numberOfMarkers*i, centerY-markerHeight/2)
+		context.lineTo(centerX-width/numberOfMarkers*i, centerY+markerHeight/2)
+		context.moveTo(centerX-markerHeight, centerY-height/numberOfMarkers*i)
+		context.lineTo(centerX+markerHeight, centerY-height/numberOfMarkers*i)
 
 	context.strokeStyle = "black"
 	context.stroke()
 
-drawPixel = (config, context, point) ->
-	[x,y] = point
+drawPixel = (config, context, x, y) ->
 	context.beginPath();
 	context.arc config.centerX+x*config.scale,config.centerY-y*config.scale, 5, 0, 2*Math.PI
 	context.fill()
 
-drawArrow = (config, context, fromx, fromy, tox, toy) ->
+drawArrow = (config, context, fromx = 0, fromy = 0, tox = 0, toy = 0) ->
+	
 	fromx *= config.scale
 	fromy *= config.scale
 	tox *= config.scale
@@ -81,7 +112,8 @@ drawArrow = (config, context, fromx, fromy, tox, toy) ->
 	context.stroke()
 
 Template.plot_2d.rendered = ->
-	canvas = @find ".canvas"
+	canvas = @find ".plot_2d_canvas canvas"
+	
 	context = canvas.getContext "2d"
 	
 	data = @data
@@ -93,56 +125,99 @@ Template.plot_2d.rendered = ->
 	experimentID = @data.experimentID
 	
 	chartDrawCompution = Deps.autorun ->
-		drawDataOnChart canvas, context, data
+		drawDataOnChart canvas, context, data.engine, data.plot
 	
 	Template.plot_x_t.destroyed = ->
 		chartDrawCompution?.stop()
 		chartOptionsCompution?.stop()
 
+Template.plot_2d_controls.events
+	"keyup input": _.debounce (event, template) =>
+		
+		template.$("form").submit()
+	,300
+
+Template.plot_2d_canvas.rendered = ->
+
+	fixCanvasSize = _.debounce =>
+
+		width = @$ ".plot_2d_canvas"
+		.width()
+		
+		maxWidthHeight = $(window).height() - 120
+		
+		width = Math.min width, maxWidthHeight
+		canvas = @$("canvas").get 0
+
+		canvas.width = width
+		canvas.height = width
+		
+		context = canvas.getContext "2d"
+		#update canvas
+		drawDataOnChart canvas, context, @data.engine, @data.plot
+	,600
+
+	$(window).on "resize", fixCanvasSize
+	fixCanvasSize()
+	Template.plot_2d_canvas.destroyed = ->
+		$(window).off "resize", fixCanvasSize
 
 
-getPointFromValue = (value) ->
-	if _.isArray value
-		# it is a vector, take its first two dimension
-		[value[0], value[1]]
-	else
-		[value, 0]
-drawValueAsPixel = (config, context, value) ->
-	point = getPointFromValue value
-	drawPixel config, context, point
-
-drawValueAsVector = (config, context, anchorPoint, value) ->
-	point = getPointFromValue value
-	endPoint = [anchorPoint[0] + point[0], anchorPoint[1] + point[1]]
-	drawArrow config, context, anchorPoint[0], anchorPoint[1], endPoint[0], endPoint[1]
-
-drawDataOnChart = (canvas, context, data)->
-	clearCanvas canvas, context
-	drawGrid(canvas, context)
-	{engine, plot} = data
+drawVector = (config, context, anchorX, anchorY, valueX, valueY) ->
 	
-	# will be changed:
-	vectorsToPlot =
-		x: ["_d_v"]
+	anchorX = 0 unless anchorX?
+	anchorY = 0 unless anchorY?
+	valueX = 0 unless valueX?
+	valueY = 0 unless valueY?
+	drawArrow config, context, anchorX, anchorY, anchorX + valueX, anchorY + valueY
+
+
+drawDataOnChart = (canvas, context, engine, plot)->
+	clearCanvas canvas, context
+	
+
+	# makes it reactive for plot changes
+	plot = Plots.findOne plot._id
+	plot.size = DEFAULT_PLOT_SIZE unless plot.size? and plot.size > 0
+	
+	drawGrid canvas, context, plot
+	currentScope = engine.getScope()
+	x_expression = engine.compileExpression plot?.x_var
+	y_expression = engine.compileExpression plot?.y_var
+	x_expression_vector = engine.compileExpression plot?.x_vector
+	y_expression_vector = engine.compileExpression plot?.y_vector
+	
+	
 
 	config = 
 		centerX: canvas.width / 2
 		centerY: canvas.height / 2
-		scale: plot.scale || 1
-	currentScope = engine.getScope()
-	for variable in plot.variablesToPlot
-		if currentScope?[variable]?
-			if _.isArray currentScope[variable]
-				for value, index in currentScope[variable]
-					drawValueAsPixel config, context, value
+		scale: canvas.width / plot.size
 
-					# draw vectors too
-
-					if vectorsToPlot[variable]?
-						for vectorVariable in vectorsToPlot[variable]
-							if currentScope[vectorVariable]?[index]?
-								drawValueAsVector config, context, getPointFromValue(value), currentScope[vectorVariable]?[index]
+	if plot?.vectors?
+		for object, index in engine.objects
+			currentScope._i = index+1 # mathjs indices begin with 1
+			value_x_anchor = 0
+			value_y_anchor = 0
+			for vector_expression, index in plot.vectors
+				vector_expression_compiled = engine.compileExpression "[#{vector_expression}]"
+				
+				try
+					[value_x, value_y] = vector_expression_compiled?.eval currentScope
 					
+				catch e
+					console.error e
+					value_x = 0
+					value_y = 0
+				
+				if index == 0
+					drawPixel config, context, value_x, value_y
+					value_x_anchor = value_x
+					value_y_anchor = value_y
+				else
+					drawVector config, context, value_x_anchor, value_y_anchor, value_x, value_y
+				
+			
 					
 				
 						

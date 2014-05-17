@@ -28,36 +28,48 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 		getScope: ->
 			@dataDep?.depend()
 			@scope
-	
+		
+
 		isRunning: ->
 			@stateDep?.depend()
 			@running
+
+		isResetted: ->
+			@stateDep?.depend()
+			@resetted
 
 ## controls
 
 		play: ->
 			@running = !@running
+			
 			@stateDep.changed()
 			turn = =>
 				if @running
 					@step() 
 					Meteor.defer turn
-			turn()
+			Meteor.defer turn
 
 		stop: ->
 			@running = false
 			@stateDep.changed()
 
 		reset: ->
+
+			@compileCache = {}
 			@initExperiment()
 			@initScope()
 			@initFunctions()
-			
+			@resetted = true
+			@stateDep.changed()
 			#propagate initial scope
 			@dataDep?.changed()
 
 
 		step: ->
+			if @resetted
+				Meteor.defer =>
+					@resetted = false
 			stepCounterBefore = Math.floor @scope.t / @drawInterval
 			while true
 
@@ -226,12 +238,15 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 						console.error error
 					
 
-		compileExpression: (expr) ->
-			# prepare norm |..|
-			regex = new RegExp "\\|([^\\|]+)\\|", "g"
-			expr = expr.replace regex, "norm($1)"
-			
-			expr = CustomFunctions.escapeSum expr
+		compileExpression: (exprRaw) ->
+			return unless exprRaw?
+			unless @compileCache[exprRaw]?
+
+				# prepare norm |..|
+				regex = new RegExp "\\|([^\\|]+)\\|", "g"
+				expr = exprRaw.replace regex, "norm($1)"
+				
+				expr = CustomFunctions.escapeSum expr
 
 we have every object in an array. The current object is always index i. 
 We therefore change the expressions slightly and add an index [i] to them
@@ -240,20 +255,20 @@ So if an object is a vector, we have a 2-dimensional matrix, the syntax is then 
 _d_ is a special placeholder indicating a diff-vector of this variable. This is seldom used, 
 however, it can be used to plot diff vectors
 
-			
-			for variable, objectType of @types
-				regex = new RegExp "\\b(_d_)?#{variable}\\b", "g"
-				switch objectType
-					when "Scalar" then expr = expr.replace regex, "$1#{variable}[_i]"
-					when "Vector" then expr = expr.replace regex, "$1#{variable}[_i,:]"
-				regex = new RegExp "\\b(_d_)?#{variable}_k\\b", "g"
+				for variable, objectType of @types
+					regex = new RegExp "\\b(_d_)?#{variable}\\b", "g"
+					switch objectType
+						when "Scalar" then expr = expr.replace regex, "$1#{variable}[_i]"
+						when "Vector" then expr = expr.replace regex, "$1#{variable}[_i,:]"
+					regex = new RegExp "\\b(_d_)?#{variable}_k\\b", "g"
 
-				switch objectType
-					when "Scalar" then expr = expr.replace regex, "$1#{variable}[_k]"
-					when "Vector" then expr = expr.replace regex, "$1#{variable}[_k,:]"
-			console.log "compile: #{expr}"
+					switch objectType
+						when "Scalar" then expr = expr.replace regex, "$1#{variable}[_k]"
+						when "Vector" then expr = expr.replace regex, "$1#{variable}[_k,:]"
+				console.log "compile: #{expr}"
+				@compileCache[exprRaw] = @mathjs.compile expr
 
-			return @mathjs.compile expr
+			return @compileCache[exprRaw]
 
 		assignCustomFunctionsToScope: (scope) ->
 			scope["sum"] = _.bind CustomFunctions.sum, {engine:@, scope:scope}
