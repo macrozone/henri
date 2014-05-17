@@ -49,7 +49,7 @@ Template.plot_x_t_controls.schema = ->
 	new SimpleSchema 
 		t_range: 
 			type: Number,
-			label: "x-Range"
+			label: "time range"
 			min: 1
 		
 
