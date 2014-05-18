@@ -29,6 +29,11 @@ Template.plot_x_t.rendered = ->
 
 	@data.plot.highchartsOptions.chart.renderTo = @find ".chartcontainer"
 	@data.plot.highchartsOptions.title = "" 
+	@data.plot.highchartsOptions.legend = 
+		layout: "vertical", 
+		itemStyle: 
+			fontSize: 16 
+		itemMarginBottom: 8
 	chart = new Highcharts.Chart @data.plot.highchartsOptions
 	window._testchart = chart
 	engine = @data.engine

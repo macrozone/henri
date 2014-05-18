@@ -43,6 +43,7 @@ drawGrid = (canvas, context, plot) ->
 	height = canvas.height
 	centerX = width/2
 	centerY = height/2
+
 	context.beginPath()
 	context.moveTo(0, centerY)
 	context.lineTo(width, centerY)
@@ -82,7 +83,7 @@ drawGrid = (canvas, context, plot) ->
 		context.moveTo(centerX-markerHeight, centerY-height/numberOfMarkers*i)
 		context.lineTo(centerX+markerHeight, centerY-height/numberOfMarkers*i)
 
-	context.strokeStyle = "black"
+	context.strokeStyle = "#666"
 	context.stroke()
 
 drawPixel = (config, context, x, y) ->
