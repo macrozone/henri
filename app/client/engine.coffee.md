@@ -10,7 +10,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 		constructor: () ->
 			@drawInterval = 0.1
 
-			@calcMode = "rungekutta"
+			@calcMode = "rungekutta-heun"
 			@mathjs = mathjs()
 			@mathjs.config matrix: 'array'
 			
@@ -101,7 +101,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 		calcDiffFunctions: (scope)->
 
 			switch @calcMode
-				when "rungekutta" then changes = @calcRungeKuttaChanges scope
+				when "rungekutta-heun" then changes = @calcRungeKuttaHeunChanges scope
 				else changes = @calcObjectDiffs @scope
 			
 			results = @eulerStep scope, changes, scope.dt
@@ -137,7 +137,9 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 ## [Runge-Kutta](http://de.wikipedia.org/wiki/Runge-Kutta-Verfahren)
 
-		calcRungeKuttaChanges: (scope) ->
+We use a 2-stage Runge-Kutta-Variant, the [Heun-Method(http://de.wikipedia.org/wiki/Heun-Verfahren)
+
+		calcRungeKuttaHeunChanges: (scope) ->
 			# we need a copy here
 			currentScope = Tools.cloneObject scope
 			@assignCustomFunctionsToScope currentScope
