@@ -102,9 +102,9 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 			switch @calcMode
 				when "rungekutta" then changes = @calcRungeKuttaChanges scope
-				else changes = @calcEulerChanges @scope
+				else changes = @calcObjectDiffs @scope
 			
-			results = @eulerStep scope, changes
+			results = @eulerStep scope, changes, scope.dt
 			
 			# we will also add the changes to the scope, so we can plot them
 			@addChangeVectorToScope changes
@@ -112,8 +112,9 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 ## Euler
 
-		calcEulerChanges: (scope)->
+		calcObjectDiffs: (scope)->
 			@calcObjectFunctions "diff", scope
+
 		calcObjectFunctions: (type, scope) ->
 			results = {}
 			expressions = @_compiledExpression[type]
@@ -124,10 +125,10 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 					results[variable] = [] unless results[variable]?
 					results[variable][_i] = result
 			results
-		eulerStep: (scope, changes) ->
+		eulerStep: (scope, changes, dt) ->
 			results = {}
 			for variable, value of changes
-				results[variable] = @mathjs.add(scope[variable], @mathjs.multiply(value, scope.dt))
+				results[variable] = @mathjs.add(scope[variable], @mathjs.multiply(value, dt))
 			results
 
 		addChangeVectorToScope: (changes) ->
@@ -143,11 +144,11 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 this is the change-vector for all objects at time t
 
-			changes_a = @calcEulerChanges currentScope
+			changes_a = @calcObjectDiffs currentScope
 			
 now we do an euler step a
 
-			results_a = @eulerStep currentScope, changes_a
+			results_a = @eulerStep currentScope, changes_a, currentScope.dt
 
 for [runge kutta](http://de.wikipedia.org/wiki/Runge-Kutta-Verfahren), we calculate a second change-vector, 
 this time after one step dt
@@ -157,7 +158,7 @@ then, calculate a new change-vector changes_b from this point
 			currentScope.t += currentScope.dt
 			for variable, result of results_a
 				currentScope[variable] = result
-			changes_b = @calcEulerChanges currentScope
+			changes_b = @calcObjectDiffs currentScope
 			
 now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x = x + changes * dt) later
 
