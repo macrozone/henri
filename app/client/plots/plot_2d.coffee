@@ -43,7 +43,8 @@ drawGrid = (canvas, context, plot) ->
 	height = canvas.height
 	centerX = width/2
 	centerY = height/2
-
+	context.strokeStyle = "#666"
+	context.fillStyle = "#666"
 	context.beginPath()
 	context.moveTo(0, centerY)
 	context.lineTo(width, centerY)
@@ -83,15 +84,17 @@ drawGrid = (canvas, context, plot) ->
 		context.moveTo(centerX-markerHeight, centerY-height/numberOfMarkers*i)
 		context.lineTo(centerX+markerHeight, centerY-height/numberOfMarkers*i)
 
-	context.strokeStyle = "#666"
+	
 	context.stroke()
 
-drawPixel = (config, context, x, y) ->
+drawPixel = (config, context, x, y, color = "#000") ->
+
 	context.beginPath();
+	context.fillStyle = color
 	context.arc config.centerX+x*config.scale,config.centerY-y*config.scale, 5, 0, 2*Math.PI
 	context.fill()
 
-drawArrow = (config, context, fromx = 0, fromy = 0, tox = 0, toy = 0) ->
+drawArrow = (config, context, fromx = 0, fromy = 0, tox = 0, toy = 0, color = "#f00") ->
 	
 	fromx *= config.scale
 	fromy *= config.scale
@@ -109,7 +112,7 @@ drawArrow = (config, context, fromx = 0, fromy = 0, tox = 0, toy = 0) ->
 	context.lineTo tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6)
 	context.moveTo tox, toy
 	context.lineTo tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6)
-	context.strokeStyle = "red"
+	context.strokeStyle = color
 	context.stroke()
 
 Template.plot_2d.rendered = ->
@@ -164,13 +167,13 @@ Template.plot_2d_canvas.rendered = ->
 		$(window).off "resize", fixCanvasSize
 
 
-drawVector = (config, context, anchorX, anchorY, valueX, valueY) ->
+drawVector = (config, context, anchorX, anchorY, valueX, valueY, color = "#f00") ->
 	
 	anchorX = 0 unless anchorX?
 	anchorY = 0 unless anchorY?
 	valueX = 0 unless valueX?
 	valueY = 0 unless valueY?
-	drawArrow config, context, anchorX, anchorY, anchorX + valueX, anchorY + valueY
+	drawArrow config, context, anchorX, anchorY, anchorX + valueX, anchorY + valueY, color
 
 
 drawDataOnChart = (canvas, context, engine, plot)->
@@ -204,19 +207,20 @@ drawDataOnChart = (canvas, context, engine, plot)->
 				vector_expression_compiled = engine.compileExpression "[#{vector_expression}]"
 				
 				try
-					[value_x, value_y] = vector_expression_compiled?.eval currentScope
-					
+					[values..., color] = _.flatten vector_expression_compiled?.eval currentScope
+					# only take first two components
+					[value_x, value_y] = values
 				catch e
 					console.error e
 					value_x = 0
 					value_y = 0
 				
 				if index == 0
-					drawPixel config, context, value_x, value_y
+					drawPixel config, context, value_x, value_y, color
 					value_x_anchor = value_x
 					value_y_anchor = value_y
 				else
-					drawVector config, context, value_x_anchor, value_y_anchor, value_x, value_y
+					drawVector config, context, value_x_anchor, value_y_anchor, value_x, value_y, color
 				
 			
 					

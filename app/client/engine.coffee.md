@@ -217,7 +217,10 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 						if variable? and variable.length > 0 and valueString? and type?
 							@scope[variable] = [] unless @scope[variable]?
 							@scope[variable].push _parseValue valueString, type
-						
+							# also add change-vectors (otherwise it will throw false alarms on some plots)
+							@scope["_d_#{variable}"] = [] unless @scope["_d_#{variable}"]?
+
+							@scope["_d_#{variable}"].push [0,0,0]
 		
 			
 
