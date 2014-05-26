@@ -207,7 +207,12 @@ drawDataOnChart = (canvas, context, engine, plot)->
 				vector_expression_compiled = engine.compileExpression "[#{vector_expression}]"
 				
 				try
-					[values..., color] = _.flatten vector_expression_compiled?.eval currentScope
+					result = _.flatten vector_expression_compiled?.eval currentScope
+					if _(result).size() > 2
+						[values..., color] = result
+					else
+						values = result
+						color = "black"
 					# only take first two components
 					[value_x, value_y] = values
 				catch e
