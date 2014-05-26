@@ -5,7 +5,8 @@ Template.configurationsEditor.rendered = ->
 
 	calculation = Deps.autorun =>
 		experiment = Experiments.findOne _id: Session.get("experimentID")
-		
+		experiment = Tools.sanitizeExperiment experiment
+		console.log experiment
 		if experiment? and $table.length > 0
 			experimentID = experiment._id
 			data = experiment.configurations

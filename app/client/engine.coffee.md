@@ -47,7 +47,11 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			turn = =>
 				if @running
 					@step() 
-					Meteor.defer turn
+
+					if @drawDelay? and @drawDelay > 0
+						Meteor.setTimeout turn, @drawDelay
+					else
+						Meteor.defer turn
 			Meteor.defer turn
 
 		stop: ->
@@ -179,6 +183,7 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 				
 				@configurations = experiment.configurations
 				@drawInterval = @_getDrawInterval()
+				@drawDelay = @_getDrawDelay()
 				@constants = experiment.constants
 				@objects = _.filter experiment.objects, _isValidObject
 				@types = {}
@@ -190,6 +195,10 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 		_getDrawInterval: ->
 			for field in @configurations
 				if field.variable == 'pt'
+					return field.value
+		_getDrawDelay: ->
+			for field in @configurations
+				if field.variable == 'delay'
 					return field.value
 
 		initScope: ->
@@ -215,7 +224,8 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 					for variable, valueString of anObject
 						type = @types[variable]
 						if variable? and variable.length > 0 and valueString? and type?
-							@scope[variable] = [] unless @scope[variable]?
+							@scope[variable] = [] unless @scope[variable]? and _.isArray @scope[variable]
+							console.log variable, @scope[variable]
 							@scope[variable].push _parseValue valueString, type
 							# also add change-vectors (otherwise it will throw false alarms on some plots)
 							@scope["_d_#{variable}"] = [] unless @scope["_d_#{variable}"]?

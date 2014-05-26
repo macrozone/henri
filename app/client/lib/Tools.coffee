@@ -25,33 +25,44 @@ escapeSum = (s) ->
 		[s.slice(0, position), insertString, s.slice(position)].join('')
 
 	sanitizeExperiment: (experiment) ->
-		hasDt = false;
-		hasPt = false;
-		if experiment?.configurations?
-			for field in experiment.configurations
-				if field.variable == 'dt'
-					hasDt = true;
-				if field.variable == 'pt'
-					hasPt = true;
+		if experiment?
+			hasDt = false;
+			hasPt = false;
+			hasDelay = false;
 
-		data = experiment?.configurations
-		data = [] if !data?
+			if experiment?.configurations?
+				for field in experiment.configurations
+					if field.variable == 'dt'
+						hasDt = true;
+					if field.variable == 'pt'
+						hasPt = true;
+					if field.variable == 'delay'
+						hasDelay = true;
 
-		if (!hasDt || !hasPt)
-			if (!hasDt)
-				data.push {
-					description: 'Berechnungszeitschritt'
-					value: '0.01'
-					variable: 'dt'
-				}
-			if (!hasPt)
-				data.push {
-					description: 'Zeichnenzeitschritt'
-					value: '0.1'
-					variable: 'pt'
-				}
-			Experiments.update {_id: experiment._id}, {$set: "configurations": data}
-			experiment.configurations = data;
+			data = experiment?.configurations
+			data = [] if !data?
 
-		experiment
+			if (!hasDt || !hasPt || !hasDelay)
+				if (!hasDt)
+					data.push {
+						description: 'Timestep for Calculation'
+						value: '0.01'
+						variable: 'dt'
+					}
+				if (!hasPt)
+					data.push {
+						description: 'Timestep for Redraw'
+						value: '0.1'
+						variable: 'pt'
+					}
+				if (!hasDelay)
+					data.push {
+						description: 'Delay after Redraw'
+						value: '0'
+						variable: 'delay'
+					}
+				Experiments.update {_id: experiment._id}, {$set: "configurations": data}
+				experiment.configurations = data;
+
+			experiment
 

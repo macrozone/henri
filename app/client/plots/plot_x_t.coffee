@@ -103,20 +103,21 @@ drawDataOnChart = (chart, series, data)->
 
 checkSeries = (engine, plot, chart, series) ->
 	flags = {}
-	for var_expression in plot.y_vars
-		if var_expression?
-			flags[var_expression] = true
-			for object, index in engine.objects
-				addSerieIfNeeded engine, chart, series, var_expression, index
-	seriesToRemove = []
-	for var_expression, serie  of series
-		unless flags[var_expression]?
-			seriesToRemove.push var_expression
-	
-	for var_expression in seriesToRemove
-		for serie, index in series[var_expression]
-			serie.highchartSerie?.remove()
-		delete series[var_expression]
+	if plot?.y_vars?
+		for var_expression in plot.y_vars
+			if var_expression?
+				flags[var_expression] = true
+				for object, index in engine.objects
+					addSerieIfNeeded engine, chart, series, var_expression, index
+		seriesToRemove = []
+		for var_expression, serie  of series
+			unless flags[var_expression]?
+				seriesToRemove.push var_expression
+		
+		for var_expression in seriesToRemove
+			for serie, index in series[var_expression]
+				serie.highchartSerie?.remove()
+			delete series[var_expression]
 
 
 

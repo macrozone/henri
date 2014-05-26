@@ -1,10 +1,8 @@
 
-DIMENSION = 3
+
 vectorValidator = (value, callback) ->
 	parts = value.split ","
 	parts = _.map parts, parseFloat
-
-	callback false unless parts.length == DIMENSION
 	callback _.every parts, _.isNumber
 
 sanitize = (data) ->
