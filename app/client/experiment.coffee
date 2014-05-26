@@ -4,6 +4,8 @@ engine = null
 Router.map ->
 	@route 'experiment',
 		path: "/experiment/:_id",
+		yieldTemplates: 
+			experimentHeaderNavigation: to: "headerNavigation"
 		waitOn: ->
 			Meteor.subscribe 'experiments'
 		data: ->
