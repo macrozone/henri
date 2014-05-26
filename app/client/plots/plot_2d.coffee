@@ -16,7 +16,7 @@ Template.plot_2d_controls.schema = ->
 			label: "size"
 		vectors:
 			type: [String]
-			label: "Vectors x,y (first is anchor Point)"
+			label: "Vectors to plot (x,y,color)"
 		
 
 		
