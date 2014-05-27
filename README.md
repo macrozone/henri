@@ -9,6 +9,9 @@ Work in progress.
 
 See current version here: http://henri.macrozone.ch
 
+Documentation (in German) can be accessed here:
+https://docs.google.com/document/d/1VkvkvkMbdfS7Li4YmfPvpdfbYZxeL2jWfxOAJIuAu4c
+
 built with [Meteor](http://meteor.com) and [mathjs](http://mathjs.org/)
 
 Team
