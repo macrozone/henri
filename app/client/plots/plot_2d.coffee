@@ -2,11 +2,11 @@
 
 DEFAULT_PLOT_SIZE = 100
 
-@addNewPlot_2 = (experimentID)->
+@addNewPlot_2d = (experimentID)->
 	Plots.insert 
 		experimentID: experimentID
 		type: "2d"
-		variablesToPlot:['x']
+		
 
 
 Template.plot_2d_controls.schema = ->
@@ -186,11 +186,6 @@ drawDataOnChart = (canvas, context, engine, plot)->
 	
 	drawGrid canvas, context, plot
 	currentScope = engine.getScope()
-	x_expression = engine.compileExpression plot?.x_var
-	y_expression = engine.compileExpression plot?.y_var
-	x_expression_vector = engine.compileExpression plot?.x_vector
-	y_expression_vector = engine.compileExpression plot?.y_vector
-	
 	
 
 	config = 
