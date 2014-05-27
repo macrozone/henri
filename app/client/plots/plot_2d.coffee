@@ -17,14 +17,6 @@ Template.plot_2d_controls.schema = ->
 		vectors:
 			type: [String]
 			label: "Vectors to plot (x,y,color)"
-		
-
-		
-
-		
-		#y_vars: 
-		#	type: [String],
-		#	label: "Expressions to plot on y-Axis (per Object). Supports mathjs expressions. x[1]: plot first dimension. _d_x[1]: plot differential of x"
 
 
 clearCanvas = (canvas, context) ->
