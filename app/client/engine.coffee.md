@@ -71,6 +71,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 
 		step: ->
+			
 			if @resetted
 				Meteor.defer =>
 					@resetted = false
@@ -225,7 +226,7 @@ now we calculate (changes_a + changes_b) / 2, we will perform an euler step (x =
 						type = @types[variable]
 						if variable? and variable.length > 0 and valueString? and type?
 							@scope[variable] = [] unless @scope[variable]? and _.isArray @scope[variable]
-							console.log variable, @scope[variable]
+							
 							@scope[variable].push _parseValue valueString, type
 							# also add change-vectors (otherwise it will throw false alarms on some plots)
 							@scope["_d_#{variable}"] = [] unless @scope["_d_#{variable}"]?
@@ -281,6 +282,14 @@ however, it can be used to plot diff vectors
 					switch objectType
 						when "Scalar" then expr = expr.replace regex, "$1#{variable}[_k]"
 						when "Vector" then expr = expr.replace regex, "$1#{variable}[_k,:]"
+						
+special case: explicit index, remove '_' after known variables
+this enables you to "escape" variables, then you can write:
+x_[j,:] to access another object with index j
+the colon is currently needed here
+
+					regex = new RegExp "\\b(_d_)?#{variable}_\\b", "g"
+					expr = expr.replace regex, "$1#{variable}"
 				console.log "compile: #{expr}"
 				@compileCache[exprRaw] = @mathjs.compile expr
 
