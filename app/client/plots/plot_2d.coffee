@@ -121,7 +121,8 @@ Template.plot_2d.rendered = ->
 	experimentID = @data.experimentID
 	
 	chartDrawCompution = Deps.autorun ->
-		drawDataOnChart canvas, context, data.engine, data.plot
+		if data?.plot?
+			drawDataOnChart canvas, context, data.engine, data.plot
 	
 	Template.plot_x_t.destroyed = ->
 		chartDrawCompution?.stop()
@@ -171,7 +172,6 @@ drawVector = (config, context, anchorX, anchorY, valueX, valueY, color = "#f00")
 drawDataOnChart = (canvas, context, engine, plot)->
 	clearCanvas canvas, context
 	
-
 	# makes it reactive for plot changes
 	plot = Plots.findOne plot._id
 	plot.size = DEFAULT_PLOT_SIZE unless plot.size? and plot.size > 0

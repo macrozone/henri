@@ -25,6 +25,7 @@ Template.plot_x_t.rendered = ->
 	data = @data
 	chartOptionsCompution = Deps.autorun ->
 		#update the data reactivly, this is only needed in the drawDataOnChart-Function
+
 		data.plot = Plots.findOne {_id:data.plot._id}
 
 	@data.plot.highchartsOptions.chart.renderTo = @find ".chartcontainer"
@@ -40,7 +41,8 @@ Template.plot_x_t.rendered = ->
 	experimentID = @data.experimentID
 	
 	chartDrawCompution = Deps.autorun ->
-		drawDataOnChart chart, series, data
+		if data?.plot?
+			drawDataOnChart chart, series, data
 	Template.plot_x_t.destroyed = ->
 		chartDrawCompution?.stop()
 		chartOptionsCompution?.stop()

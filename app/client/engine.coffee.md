@@ -64,6 +64,9 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			@initExperiment()
 			@initScope()
 			@initFunctions()
+			# calc the first changes, so that we can plot it
+			@calcAbsolutFunctionsAndCurrentChanges()
+		
 			@resetted = true
 			@stateDep.changed()
 			#propagate initial scope
@@ -78,13 +81,7 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			stepCounterBefore = Math.floor @scope.t / @drawInterval
 			while true
 
-				results = @calcAbsoluteFunctions @scope
-				@addResultsToScope results
-		
-				results = @calcDiffFunctions @scope
-				@addResultsToScope results
-				
-				@scope.t += @scope.dt
+				@doOneCalcStep()
 				
 				# break if enough steps are made
 				stepCounterAfter = Math.floor @scope.t / @drawInterval
@@ -96,6 +93,27 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 
 			@dataDep?.changed()
 
+		doOneCalcStep: ->
+
+			results = @eulerStep @scope, @currentChanges, @scope.dt
+			@addResultsToScope results
+			@scope.t += @scope.dt
+
+we calculate the changes AFTER the step
+this is because we want to have a prediction about the next step
+so that we can plot that prediction, if we want.
+
+we have to make sure, that @calcAbsolutFunctionsAndCurrentChanges() has been called once after initialisation
+
+			@calcAbsolutFunctionsAndCurrentChanges()
+
+		calcAbsolutFunctionsAndCurrentChanges: ->
+			results = @calcAbsoluteFunctions @scope
+			@addResultsToScope results
+			@currentChanges = @calcDiffChanges @scope
+			# we will also add the currentChanges to the scope, so we can plot them
+			@addChangeVectorToScope @currentChanges
+
 		addResultsToScope: (results) ->
 			for variable, result of results
 				@scope[variable] = result
@@ -103,17 +121,14 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 		calcAbsoluteFunctions: (scope)->
 			@calcObjectFunctions 'absolute', scope
 
-		calcDiffFunctions: (scope)->
-
+		calcDiffChanges: (scope)->
 			switch @calcMode
-				when "rungekutta-heun" then changes = @calcRungeKuttaHeunChanges scope
-				else changes = @calcObjectDiffs @scope
+				when "rungekutta-heun" then @calcRungeKuttaHeunChanges scope
+				else @calcObjectDiffs @scope
 			
-			results = @eulerStep scope, changes, scope.dt
 			
-			# we will also add the changes to the scope, so we can plot them
-			@addChangeVectorToScope changes
-			return results
+
+		
 
 ## Euler
 

@@ -53,7 +53,8 @@ Template.plot_3d.rendered = ->
 	experimentID = @data.experimentID
 	
 	chartDrawCompution = Deps.autorun ->
-		drawDataOnChart renderer, scene, camera, data.engine, data.plot, objects
+		if data?.plot?
+			drawDataOnChart renderer, scene, camera, data.engine, data.plot, objects
 	
 	fixCanvasSize = _.debounce =>
 
@@ -70,7 +71,7 @@ Template.plot_3d.rendered = ->
 		canvas.width = width
 		canvas.height = width
 		renderer.setSize width, width
-		console.log "resize", width
+	
 		
 	,600
 	$(window).on "resize", fixCanvasSize
@@ -113,6 +114,7 @@ drawDataOnChart = (renderer, scene, camera, engine, plot, objects)->
 	
 
 	# makes it reactive for plot changes
+
 	plot = Plots.findOne plot._id
 	plot.size = DEFAULT_PLOT_SIZE unless plot.size? and plot.size > 0
 	
