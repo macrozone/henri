@@ -4,7 +4,7 @@
 	Plots.insert 
 		experimentID: experimentID
 		type: "x_t"
-		y_vars:['x'],
+		y_vars:['x[1]'],
 		t_range: 50
 		title: ""
 		highchartsOptions:
@@ -17,6 +17,13 @@
 				line:
 					marker: enabled: false
 					shadow: false
+
+Template.plot_x_t_controls.formType = ->
+	experiment = Experiments.findOne _id: @experimentID
+	if Meteor.userId()? and experiment?.user_id == Meteor.userId()
+		"update"
+	else
+		"disabled"
 
 Template.plot_x_t.rendered = ->
 
@@ -107,10 +114,11 @@ checkSeries = (engine, plot, chart, series) ->
 	flags = {}
 	if plot?.y_vars?
 		for var_expression in plot.y_vars
-			if var_expression?
+			if var_expression? 
 				flags[var_expression] = true
-				for object, index in engine.objects
-					addSerieIfNeeded engine, chart, series, var_expression, index
+				if engine.objects?
+					for object, index in engine.objects
+						addSerieIfNeeded engine, chart, series, var_expression, index
 		seriesToRemove = []
 		for var_expression, serie  of series
 			unless flags[var_expression]?

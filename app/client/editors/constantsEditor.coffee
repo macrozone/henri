@@ -5,7 +5,7 @@ Template.constantsEditor.rendered = ->
 
 	calculation = Deps.autorun =>
 		experiment = Experiments.findOne _id: Session.get("experimentID")
-		
+		isOwner = Meteor.userId()? and experiment.user_id == Meteor.userId()
 		if experiment? and $table.length > 0
 			experimentID = experiment._id
 			data = experiment.constants
@@ -15,6 +15,7 @@ Template.constantsEditor.rendered = ->
 				handsontable.loadData data
 			else
 				$table.handsontable
+					readOnly: not isOwner
 					data: data
 					minSpareRows: 1
 					colHeaders: ["Constant", "Type", "Value"]
@@ -33,7 +34,7 @@ Template.constantsEditor.rendered = ->
 
 					]
 					afterChange: (change, source) ->
-						unless source == "loadData"
+						unless source == "loadData" or not isOwner
 							Experiments.update {_id: Session.get("experimentID")}, {$set: "constants": @getData()}
 
 					

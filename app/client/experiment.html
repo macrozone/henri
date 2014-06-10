@@ -1,6 +1,6 @@
 <template name="experiment">
 	{{setTitle experiment.name " - Henri" }}
-		
+
 	{{>experimentName}}
 
 	{{>experimentEditor}}
@@ -15,21 +15,37 @@
 </template>
 
 <template name="experimentHeaderNavigation">
-<li>{{>engineControls}}</li>
+	<li>{{>engineControls}}</li>
+	
+</template>
+<template name="experimentHeaderNavigationRight">
+	<li>{{>experimentControls}}</li>
 </template>
 
 <template name="experimentEditor">
 	<div class="experimentEditor panel panel-default">
 		<div class="panel-heading" data-toggle="collapse" data-target=".experimentEditor .panel-body">
 			<h4>Edit Experiment</h4>
+			{{#if isOwner}}
+			<p>This is your Experiment</p>
+			{{else}}
+			{{#if currentUser}}
+			<p>This is someone else's Experiment.<br/> If you want to edit it, copy it first into your workspace</p>
+			{{else}}
+			<p>Login or signup, if you want to edit this experiment</p>
+				{{/if}}
+			{{/if}}
+			<div class="right">
+				{{>experimentControls}}
+			</div>
 		</div>
 		<div class="panel-body collapse in">
-            <div class="col-xs-12 col-sm-6">
-                {{>configurationsEditor}}
-            </div>
-            <div class="col-xs-12 col-sm-6">
-                {{>constantsEditor}}
-            </div>
+			<div class="col-xs-12 col-sm-6">
+				{{>configurationsEditor}}
+			</div>
+			<div class="col-xs-12 col-sm-6">
+				{{>constantsEditor}}
+			</div>
 			<div class="col-xs-6 col-sm-6">
 				{{>objectClassEditor}}
 			</div>
@@ -43,11 +59,19 @@
 	</div>
 </template>
 <template name="experimentControls">
-	<button class="btn btn-delete btn-warning"><span class="glyphicon glyphicon-warning-sign"></span> Delete Experiment</button>
-	<button class="btn btn-duplicate btn-warning"><span class="glyphicon glyphicon-retweet"></span> Duplicate Experiment</button>
+	<div class="experimentControls">
+		{{#if isOwner}}
+		<button class="btn btn-delete btn-danger" data-toggle="tooltip" data-placement="bottom" title="Click to delete this Experiment"><span class="glyphicon glyphicon-remove"></span>  Delete</button>
+		{{/if}}
+		{{#if currentUser}}
+			<button class="btn btn-duplicate btn-primary" data-toggle="tooltip" data-placement="bottom" title="Click to copy this Experiment into your workspace"><span class="glyphicon glyphicon-retweet"></span> Copy</button>
+		{{/if}}
+
+	</div>
 </template>
+
 <template name="experimentName">
-	<h2>{{experiment.name}}</h2>
+	<h2 data-placement="bottom" data-toggle="tooltip" title="Click to edit the name of this experiment">{{experiment.name}}</h2>
 	<input style="display: none;" class="input-lg form-control" type="text" value="{{experiment.name}}" />
 
 </template>

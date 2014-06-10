@@ -1,6 +1,6 @@
 <template name="configurationsEditor">
-    <h4>1.) Configurations</h4>
-    <div class="table"></div>
+	<h4>1.) Configurations</h4>
+	<div class="table"></div>
 </template>
 
 <template name="constantsEditor">
@@ -40,12 +40,20 @@
 <template name="oneFunction">
 	<tr>
 
-		<td><input type="checkbox" class="ddt" checked="{{calcDiff}}"/></td><td>{{variable}}</td>
+		<td>
+			<input disabled="{{isNotOwner}}" type="checkbox" class="ddt" checked="{{calcDiff}}" data-placement="bottom" data-toggle="tooltip" title="Enable / disable differential calculation. Enabled: The new value for {{variable}} is: {{variable}} = {{variable}} + dt * d{{variable}}/dt. Disabled: the new value for {{variable}} is calculated absolutly"/>
+		</td>
+		<td>{{variableWithDiff}}</td>
 		<td>=</td>
-		<td width="40%"><input id="function_{{variable}}" class="function form-control" placeholder="function" type="text" value="{{function.expression}}" /></td>
-		<td><div class="pretty">{{expressionForPretty}}</div>
+		<td width="40%">
+			<input disabled="{{isNotOwner}}" class="function form-control" placeholder="function" type="text" value="{{function.expression}}" data-placement="bottom" data-toggle="tooltip" title="The Expression for variable {{variable}}" />
+		</td>
+		<td>
+			<div class="pretty" data-placement="bottom" data-toggle="tooltip" title="Pretty-print using mathjax.org" >{{expressionForPretty}}</div>
 		</td>
 		
-		<td><input id="comment_{{variable}}" class="comment form-control" placeholder="comment" type="text" value="{{function.comment}}" /></td>
+		<td>
+			<input disabled="{{isNotOwner}}" class="comment form-control" placeholder="comment" type="text" value="{{function.comment}}" data-placement="bottom" data-toggle="tooltip" title="Comment"/>
+		</td>
 	</tr>
 </template>

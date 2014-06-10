@@ -14,17 +14,19 @@ duplicateDocument = (collection, doc, overwriteValues = {}) ->
 
 duplicateMultipleDocuments = (collection, query, overwriteValues = {}) ->
 	collection.find(query).forEach (doc) ->
-
 		duplicateDocument collection, doc, overwriteValues
 
 Meteor.methods 
 	"deleteExperiment": (experimentID) ->
-		Experiments.remove _id: experimentID
+		throw Error "not logged in" unless @userId?
+		Experiments.remove _id: experimentID, user_id: @userId
 		Functions.remove experimentID: experimentID
 		Plots.remove experimentID: experimentID
 	"duplicateExperiment": (experimentID) ->
+		throw Error "not logged in" unless @userId?
 		experiment = Experiments.findOne _id: experimentID
 		experiment.name += " (copy)"
+		experiment.user_id = @userId
 		newID = duplicateDocument Experiments, experiment
 		duplicateMultipleDocuments Functions, {experimentID: experimentID}, {experimentID: newID}
 		duplicateMultipleDocuments Plots, {experimentID: experimentID}, {experimentID: newID}

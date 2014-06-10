@@ -1,14 +1,14 @@
 <template name="engineControls">
 <div class="engineControls">
-<p class="time">t = {{time}}</p>
+<p class="time" data-placement="bottom" data-toggle="tooltip" title="Current time t of the experiment">t = {{time}}</p>
 <div class="buttons">
-	<button class="btn btn-primary btn-play">
+	<button class="btn btn-primary btn-play" data-placement="bottom" data-toggle="tooltip" title="Play / Pause Experiment">
 		<span class="glyphicon {{playIcon}}"></span> {{playLabel}}
 	</button>
-	<button class="btn btn-info btn-step">
+	<button class="btn btn-info btn-step" data-placement="bottom" data-toggle="tooltip" title="Go step-by-step through the experiment">
 		<span class="glyphicon glyphicon-step-forward"></span> step
 	</button>
-	<button class="btn btn-reset btn-warning">
+	<button class="btn btn-reset btn-warning" data-placement="bottom" data-toggle="tooltip" title="Reset the Experiment to its initial state">
 		<span class="glyphicon glyphicon-fast-backward"></span> Reset
 	</button>
 </div>

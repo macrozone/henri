@@ -6,6 +6,7 @@ Router.map ->
 		path: "/experiment/:_id",
 		yieldTemplates: 
 			experimentHeaderNavigation: to: "headerNavigation"
+			experimentHeaderNavigationRight: to: "headerNavigationRight"
 		waitOn: ->
 			Meteor.subscribe 'experiments'
 		data: ->
@@ -29,10 +30,14 @@ Router.map ->
 			engine?.stop()
 			engine = null
 
+Template.experimentName.rendered = ->
+	@$("[data-toggle='tooltip']").tooltip()
+
 Template.experimentName.events
 	"click h2": (event, template) ->
-		$(template.find("input")).show()
-		$(template.find("h2")).hide()
+		if Meteor.userId()? and template.data.experiment?.user_id == Meteor.userId()
+			$(template.find("input")).show()
+			$(template.find("h2")).hide()
 	"blur input": (event, template) ->
 		$(template.find("input")).hide()
 		$(template.find("h2")).show()
@@ -44,18 +49,29 @@ Template.experimentName.events
 			name = "Sample Experiment (click to edit name)"
 		Experiments.update {_id:template.data.experiment._id}, $set: name: name
 
+
+Template.experimentEditor.isOwner = ->
+	Meteor.userId()? and @experiment.user_id == Meteor.userId()
+
+Template.experimentControls.rendered = ->
+	@$(".btn").tooltip()
+
+Template.experimentControls.isOwner = ->
+	Meteor.userId()? and @experiment.user_id == Meteor.userId()
+
 Template.experimentControls.events
 	"click .btn-delete": (event, template)->
 		shouldDelete = confirm("Delete Experiment?")
 		if shouldDelete
 			Meteor.call "deleteExperiment", template.data.experimentID
 			Router.go "home"
+		return false
 	"click .btn-duplicate": (event, template) ->
 		Meteor.call "duplicateExperiment", template.data.experimentID, (error, newID) ->
 			if newID?
 				Router.go "experiment", _id: newID
 				window.scrollTo 0, 0
-
+		return false
 Template.functions.variables = ->
 	Experiments.findOne({_id: @experiment?._id})?.objectClass
 
@@ -116,8 +132,10 @@ onDdtCheckboxChange = (event, template) ->
 Template.functions.rendered = ->
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub])
 
+
 Template.oneFunction.rendered = ->
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub])
+	@$("[data-toggle='tooltip']").tooltip()
 
 shouldCalcDiff = (data)->
 	experiment = Experiments.findOne {_id: Session.get("experimentID")}
@@ -131,18 +149,25 @@ shouldCalcDiff = (data)->
 Template.oneFunction.calcDiff = ->
 	shouldCalcDiff @
 
-Template.oneFunction.variable = ->
+Template.oneFunction.variableWithDiff = ->
 	experiment = Experiments.findOne {_id: Session.get("experimentID")}
 	calcDiff = shouldCalcDiff @
+
 	if calcDiff
 		diffOperator = "d/dt "
 	else
 		diffOperator = ""
+
 	prepareExprForPretty diffOperator+@variable, experiment
+
 
 Template.oneFunction.function = ->
 
 	Functions.findOne({experimentID: Session.get("experimentID"), variable: @variable})
+
+Template.oneFunction.isNotOwner = ->
+	experiment = Experiments.findOne {_id: Session.get("experimentID")}
+	experiment.user_id != Meteor.userId()
 
 Template.oneFunction.expressionForPretty = ->
 	Meteor.defer ->

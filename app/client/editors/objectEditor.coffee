@@ -16,7 +16,7 @@ Template.objectEditor.rendered = ->
 	$table = $(@find ".table")
 	calculation = Deps.autorun =>
 		experiment = Experiments.findOne _id: Session.get("experimentID")
-	
+		isOwner = Meteor.userId()? and experiment.user_id == Meteor.userId()
 		if experiment? and $table.length > 0
 			experimentID = experiment._id
 			data = experiment.objects
@@ -49,6 +49,7 @@ Template.objectEditor.rendered = ->
 				handsontable.loadData data
 			else
 				$table.handsontable 
+					readOnly: not isOwner
 					data: data
 					minSpareRows: 1
 					colHeaders: ["Variable", "Type"]
@@ -56,7 +57,7 @@ Template.objectEditor.rendered = ->
 					columns: columns
 					colHeaders: colHeaders
 					afterChange: (change, source) ->
-						unless source == "loadData"
+						unless source == "loadData" or not isOwner
 							data = sanitize @getData()
 							Experiments.update {_id: Session.get("experimentID")}, {$set: objects: data}
 	Template.objectEditor.destroyed = ->

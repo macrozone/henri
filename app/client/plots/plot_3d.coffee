@@ -14,6 +14,12 @@ Template.plot_3d_controls.schema = ->
 			type: [String]
 			label: "Vectors to plot (x,y,z) (currently only one vector is supported)"
 
+Template.plot_3d_controls.formType = ->
+	experiment = Experiments.findOne _id: @experimentID
+	if Meteor.userId()? and experiment?.user_id == Meteor.userId()
+		"update"
+	else
+		"disabled"
 
 
 Template.plot_3d.rendered = ->

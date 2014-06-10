@@ -1,19 +1,49 @@
 <template name="home">
-<div class="jumbotron">
- <h1 class="pageTitle"><img src="/henri.jpg" />Henri</h1>
- <p>Create and simulate Dynamic Systems easily</p>
-<button class="btn btn-primary btn-lg btn-create-experiment">Create new Experiment</button>
-</div>
-{{>home_experiment_list}}
+	<div class="jumbotron">
+		<h1 class="pageTitle"><img src="/henri.jpg" />Henri</h1>
+		<p>Create and simulate Dynamic Systems easily</p>
+		{{#if currentUser}}
+			{{>home_createExperimentButton}}
+		{{else}}
+			<p>Please <a href="#" class="toggleLogin">login or signup</a> to create an Experiment</p>
+		{{/if}}
+		
+	</div>
+	{{>home_experiment_list}}
 </template>
+<template name="home_createExperimentButton">
 
+	<button class="btn btn-primary btn-lg btn-create-experiment">Create new Experiment</button>
+
+</template>
 <template name="home_experiment_list">
 	{{setTitle "Henri"}}
-	<h2>All Experiments</h2>
-	<ul class="home_experiment_list">
-		{{#each experiments}}
-		<li><a href="{{pathFor 'experiment'}}">{{#if name}}{{name}}{{else}}{{_id}}{{/if}}</a></li>
-		{{/each}}
-	</ul>
+	{{#if currentUser}}
+	<div class="col-sm-6">
+		<h2>Your Workspace</h2>
+		<ul class="home_experiment_list">
+			{{#each userExperiments}}
+			{{>home_oneExperiment}}
+			{{else}}
+			<p>You don't have an Experiment yet. Create a new or copy another one</p>
+			{{>home_createExperimentButton}}
+			{{/each}}
 
+		</ul>
+	</div>
+	{{/if}}
+
+	<div class="col-sm-6">
+		<h2>All Experiments</h2>
+		<ul class="home_experiment_list">
+			{{#each allExperiments}}
+			{{>home_oneExperiment}}
+			{{/each}}
+		</ul>
+	</div>
+
+</template>
+
+<template name="home_oneExperiment">
+	<li><a href="{{pathFor 'experiment'}}">{{#if name}}{{name}}{{else}}{{_id}}{{/if}}</a></li>
 </template>

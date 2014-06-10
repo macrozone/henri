@@ -10,3 +10,6 @@ Template.onePlot.events
 		if shouldDelete
 			Plots.remove _id: template.data.plot._id
 
+
+Template.onePlot.isOwner = ->
+	Meteor.userId()? and @experiment.user_id == Meteor.userId()

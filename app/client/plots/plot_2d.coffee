@@ -6,8 +6,16 @@ DEFAULT_PLOT_SIZE = 100
 	Plots.insert 
 		experimentID: experimentID
 		type: "2d"
+		vectors:['x, "green"', 'v, "red"'],
+		size: 500
 		
 
+Template.plot_2d_controls.formType = ->
+	experiment = Experiments.findOne _id: @experimentID
+	if Meteor.userId()? and experiment?.user_id == Meteor.userId()
+		"update"
+	else
+		"disabled"
 
 Template.plot_2d_controls.schema = ->
 	new SimpleSchema 
@@ -129,7 +137,8 @@ Template.plot_2d.rendered = ->
 		chartOptionsCompution?.stop()
 
 Template.plot_2d_controls.events
-	"keyup input": _.debounce (event, template) =>
+	
+	"click .autoform-remove-item, keyup input": _.debounce (event, template) =>
 		
 		template.$("form").submit()
 	,300

@@ -26,7 +26,8 @@ h1.pageTitle
 	clear: both	
 .jumbotron
 	background-color: white
-
+#main-container
+	margin-bottom:120px
 .modal-dialog
 	z-index: 99999
 
@@ -39,15 +40,13 @@ h1.pageTitle
 		height: 52px
 		float: left
 		padding-right: 8px
-.onePlot
-	.panel-heading
-		position: relative
-		.btn-delete
-			position: absolute
-			right: 10px
-			top: 9px
-	.autoform-array-item .form-group label
-		display: none;
+
+.experimentEditor 
+	position: relative
+	.right
+		position: absolute
+		right: 10px
+		top: 24px
 	
 .engineControls
 	.buttons
@@ -59,10 +58,11 @@ h1.pageTitle
 	img 
 		width: 275px
 
-.navbar .engineControls
+.navbar .engineControls, .navbar .experimentControls
 	float: left
 
 	margin-top: 8px
+	margin-right: 16px
 	.time
 		color: white
 		padding-left: 8px
@@ -75,3 +75,5 @@ h1.pageTitle
 {
 	cursor: row-resize
 }
+
+

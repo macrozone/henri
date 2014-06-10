@@ -4,8 +4,10 @@ Template.configurationsEditor.rendered = ->
 	$table = $(@find ".table")
 
 	calculation = Deps.autorun =>
+
 		experiment = Experiments.findOne _id: Session.get("experimentID")
 		experiment = Tools.sanitizeExperiment experiment
+		isOwner = Meteor.userId()? and experiment.user_id == Meteor.userId()
 		if experiment? and $table.length > 0
 			experimentID = experiment._id
 			data = experiment.configurations
@@ -29,12 +31,12 @@ Template.configurationsEditor.rendered = ->
 						},
 						{
 							data: "value"
-							readOnly: false
+							readOnly: if isOwner then false else true
 						}
 
 					]
 					afterChange: (change, source) ->
-						unless source == "loadData"
+						unless source == "loadData" or not isOwner
 							Experiments.update {_id: Session.get("experimentID")}, {$set: "configurations": @getData()}
 
 					

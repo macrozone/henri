@@ -7,22 +7,24 @@
 {{#each plots}}
 	{{>onePlot plot=this engine=../engine experimentID=../experimentID}}
 	{{/each}}
-
-	{{>addPlots}}
+	{{#if isOwner}}
+		{{>addPlots}}
+	{{/if}}
 	</div>
 	</div>
 </template>
 
 <template name="addPlots">
-<div class="col-xs-12 col-sm-12">
-<button class="btn btn-primary btn-add-x_t">
-Add new x_t Plot
+<div class="addPlots col-xs-12 col-sm-12">
+<p>Add plots:</p>
+<button class="btn btn-primary btn-add-x_t" data-placement="bottom" data-toggle="tooltip" title="Add a plot, where you can plot a value x against the time t">
+<span class="glyphicon glyphicon-plus"></span> new x(t) plot
 </button>
-<button class="btn btn-primary btn-add-2d">
-Add new 2d Plot
+<button class="btn btn-primary btn-add-2d" data-placement="bottom" data-toggle="tooltip" title="Add a plot, where you can plot the orbit of a pair (x,y), typically the position of an object">
+<span class="glyphicon glyphicon-plus"></span> new 2d plot
 </button>
-<button class="btn btn-primary btn-add-3d">
-Add new 3d Plot (*EXPERIMENTAL* requires WebGL-Support)
+<button class="btn btn-primary btn-add-3d" data-placement="bottom" data-toggle="tooltip" title="Add a plot, where you can plot the orbit of a tripel (x,y,z), typically the position of an object. (*EXPERIMENTAL* requires WebGL-Support)">
+<span class="glyphicon glyphicon-plus"></span> new 3d plot 
 </button>
 </div>
 

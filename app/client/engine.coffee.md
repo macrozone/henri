@@ -138,12 +138,13 @@ we have to make sure, that @calcAbsolutFunctionsAndCurrentChanges() has been cal
 		calcObjectFunctions: (type, scope) ->
 			results = {}
 			expressions = @_compiledExpression[type]
-			for object, _i in @objects
-				scope._i = _i+1 # mathjs indices begin with 1
-				for variable, expression of expressions
-					result = expression.eval scope
-					results[variable] = [] unless results[variable]?
-					results[variable][_i] = result
+			if @objects?
+				for object, _i in @objects
+					scope._i = _i+1 # mathjs indices begin with 1
+					for variable, expression of expressions
+						result = expression.eval scope
+						results[variable] = [] unless results[variable]?
+						results[variable][_i] = result
 			results
 		eulerStep: (scope, changes, dt) ->
 			results = {}

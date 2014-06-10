@@ -7,9 +7,14 @@
 	<div class="onePlot plot_{{plot.type}} panel panel-default">
 		<div class="panel-heading">
 			<h5>{{plot.type}}</h5>
+			{{#with ../..}}
+			{{#if isOwner}}
 			<button class="btn btn-delete btn-danger">
 					<span class="glyphicon glyphicon-remove"></span> Delete plot
 				</button>	
+
+				{{/if}}
+					{{/with}}
 		</div>
 		<div class="panel-body">
 			<div class="controls">

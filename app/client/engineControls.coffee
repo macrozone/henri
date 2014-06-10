@@ -10,7 +10,9 @@ Template.engineControls.playIcon = ->
 		"glyphicon-play"
 Template.engineControls.time = ->
 	@engine?.getScope().t.toPrecision 5
-	
+
+Template.engineControls.rendered = ->
+	@$("[data-toggle='tooltip']").tooltip()
 Template.engineControls.events
 	"click .btn-step": (event, template) ->
 		template.data?.engine?.stop()
