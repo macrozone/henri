@@ -65,8 +65,10 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			@initScope()
 			@initFunctions()
 			# calc the first changes, so that we can plot it
-			@calcAbsolutFunctionsAndCurrentChanges()
-		
+			try
+				@calcAbsolutFunctionsAndCurrentChanges()
+			catch error
+				console.error error
 			@resetted = true
 			@stateDep.changed()
 			#propagate initial scope
