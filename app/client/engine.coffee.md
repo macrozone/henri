@@ -1,6 +1,6 @@
 # Engine
 
-The engine is the hearth of Henri, it uses [mathjs](mathjs.org) _ally.
+The engine is the hearth of Henri, it uses [mathjs](mathjs.org) internally.
 The current data of the calculation can be accessed with engine.getScope() (scope is a terminus from mathjs)
 The engine is a [reactive Meteor-Datasource](http://docs.meteor.com/#reactivity),
 so if you access getScope in a reactive context, it will be re-run, if the data changes here
@@ -137,7 +137,7 @@ we have to make sure, that @calcAbsolutFunctionsAndCurrentChanges() has been cal
 						results[variable] = [] unless results[variable]?
 						results[variable][_i] = result
 			results
-			
+
 		eulerStep: (scope, changes, dt) ->
 			results = {}
 			for variable, value of changes
