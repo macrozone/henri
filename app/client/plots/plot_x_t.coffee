@@ -73,7 +73,7 @@ Template.plot_x_t_controls.schema = ->
 
 
 Template.plot_x_t_controls.events
-	"keyup input, click button": _.debounce (event, template) =>
+	"keyup input, click .autoform-remove-item": _.debounce (event, template) =>
 		template.$("form").submit()
 	,300
 
