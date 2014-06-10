@@ -137,10 +137,13 @@ Template.plot_2d.rendered = ->
 		chartOptionsCompution?.stop()
 
 Template.plot_2d_controls.events
-	
-	"click .autoform-remove-item, keyup input": _.debounce (event, template) =>
+	"click .autoform-remove-item": (event, template) ->
+		template.$("form").submit()
+		return false
+	"keyup input": _.debounce (event, template) =>
 		
 		template.$("form").submit()
+		return false
 	,300
 
 Template.plot_2d_canvas.rendered = ->
