@@ -51,13 +51,13 @@ Template.experimentName.events
 
 
 Template.experimentEditor.isOwner = ->
-	Meteor.userId()? and @experiment.user_id == Meteor.userId()
+	Meteor.userId()? and @experiment?.user_id == Meteor.userId()
 
 Template.experimentControls.rendered = ->
 	@$(".btn").tooltip()
 
 Template.experimentControls.isOwner = ->
-	Meteor.userId()? and @experiment.user_id == Meteor.userId()
+	Meteor.userId()? and @experiment?.user_id == Meteor.userId()
 
 Template.experimentControls.events
 	"click .btn-delete": (event, template)->
@@ -167,7 +167,7 @@ Template.oneFunction.function = ->
 
 Template.oneFunction.isNotOwner = ->
 	experiment = Experiments.findOne {_id: Session.get("experimentID")}
-	experiment.user_id != Meteor.userId()
+	experiment?.user_id != Meteor.userId()
 
 Template.oneFunction.expressionForPretty = ->
 	Meteor.defer ->
