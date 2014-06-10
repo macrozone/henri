@@ -16,7 +16,7 @@ Template.objectEditor.rendered = ->
 	$table = $(@find ".table")
 	calculation = Deps.autorun =>
 		experiment = Experiments.findOne _id: Session.get("experimentID")
-		isOwner = Meteor.userId()? and experiment.user_id == Meteor.userId()
+		isOwner = Meteor.userId()? and experiment?.user_id == Meteor.userId()
 		if experiment? and $table.length > 0
 			experimentID = experiment._id
 			data = experiment.objects

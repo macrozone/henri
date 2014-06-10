@@ -7,7 +7,7 @@ Template.configurationsEditor.rendered = ->
 
 		experiment = Experiments.findOne _id: Session.get("experimentID")
 		experiment = Tools.sanitizeExperiment experiment
-		isOwner = Meteor.userId()? and experiment.user_id == Meteor.userId()
+		isOwner = Meteor.userId()? and experiment?.user_id == Meteor.userId()
 		if experiment? and $table.length > 0
 			experimentID = experiment._id
 			data = experiment.configurations
