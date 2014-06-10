@@ -74,26 +74,21 @@ so if you access getScope in a reactive context, it will be re-run, if the data 
 			#propagate initial scope
 			@dataDep?.changed()
 
-
 		step: ->
-			
 			if @resetted
 				Meteor.defer =>
 					@resetted = false
 			stepCounterBefore = Math.floor @scope.t / @drawInterval
 			while true
-
 				@doOneCalcStep()
-				
 				# break if enough steps are made
 				stepCounterAfter = Math.floor @scope.t / @drawInterval
-			
 				break if stepCounterAfter > stepCounterBefore
-					
-			# propagate change, this will redraw all plots
-			
 
+			# propagate change, this will redraw all plots
 			@dataDep?.changed()
+
+## Calculation
 
 		doOneCalcStep: ->
 
@@ -128,12 +123,6 @@ we have to make sure, that @calcAbsolutFunctionsAndCurrentChanges() has been cal
 				when "rungekutta-heun" then @calcRungeKuttaHeunChanges scope
 				else @calcObjectDiffs @scope
 			
-			
-
-		
-
-## Euler
-
 		calcObjectDiffs: (scope)->
 			@calcObjectFunctions "diff", scope
 
@@ -148,6 +137,7 @@ we have to make sure, that @calcAbsolutFunctionsAndCurrentChanges() has been cal
 						results[variable] = [] unless results[variable]?
 						results[variable][_i] = result
 			results
+			
 		eulerStep: (scope, changes, dt) ->
 			results = {}
 			for variable, value of changes
