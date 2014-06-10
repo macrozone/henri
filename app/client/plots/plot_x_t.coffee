@@ -37,6 +37,14 @@ Template.plot_x_t.rendered = ->
 
 	@data.plot.highchartsOptions.chart.renderTo = @find ".chartcontainer"
 	@data.plot.highchartsOptions.title = "" 
+	@data.plot.highchartsOptions.tooltip = 
+		shared: true
+		useHTML: true
+		valueDecimals: 5
+		headerFormat: '<p>t = {point.key:.5f}</p><table class="table table-condensed">'
+		pointFormat: '<tr><td style="color: {series.color}">{series.name}: </td>' +
+			'<td style="text-align: right"><strong>{point.y} </strong></td></tr>'
+		footerFormat: '</table>'
 	@data.plot.highchartsOptions.legend = 
 		layout: "vertical", 
 		itemStyle: 

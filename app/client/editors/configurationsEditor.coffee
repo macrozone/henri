@@ -14,18 +14,17 @@ Template.configurationsEditor.rendered = ->
 			data = {} unless data? 
 			handsontable = $table.handsontable "getInstance"
 			columns = [
-						{
-							data: "variable"
-						},
-						{
-							data: "description"
-						},
-						{
-							data: "value"
-							readOnly: if isOwner then false else true
-						}
-
-					]
+				{
+					data: "variable"
+				},
+				{
+					data: "description"
+				},
+				{
+					data: "value"
+					readOnly: if isOwner then false else true
+				}
+			]
 			if handsontable?
 				handsontable.updateSettings 
 					readOnly: not isOwner
@@ -43,7 +42,6 @@ Template.configurationsEditor.rendered = ->
 						unless source == "loadData" or not isOwner
 							Experiments.update {_id: Session.get("experimentID")}, {$set: "configurations": @getData()}
 
-					
 
 	Template.configurationsEditor.destroyed = ->
 		calculation?.stop()			
