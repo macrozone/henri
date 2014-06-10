@@ -2,7 +2,7 @@ Template.plots.plots = ->
 	Plots.find {experimentID: @experimentID}
 
 Template.plots.isOwner = ->
-	Meteor.userId()? and @experiment.user_id == Meteor.userId()
+	Meteor.userId()? and @experiment?.user_id == Meteor.userId()
 
 Template.addPlots.rendered = ->
 	@$("[data-toggle='tooltip']").tooltip()
