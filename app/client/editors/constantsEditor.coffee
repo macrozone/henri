@@ -12,6 +12,8 @@ Template.constantsEditor.rendered = ->
 			data = {} unless data? 
 			handsontable = $table.handsontable "getInstance"
 			if handsontable?
+				handsontable.updateSettings 
+					readOnly: not isOwner
 				handsontable.loadData data
 			else
 				$table.handsontable

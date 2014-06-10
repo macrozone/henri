@@ -44,6 +44,7 @@ Template.objectEditor.rendered = ->
 			handsontable = $table.handsontable "getInstance"
 			if handsontable?
 				handsontable.updateSettings 
+					readOnly: not isOwner
 					columns: columns
 					colHeaders: colHeaders
 				handsontable.loadData data
